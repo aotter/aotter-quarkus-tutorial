@@ -35,12 +35,12 @@
    * 套件位置：src.main.kotlin.model.po
    * 是一個通用的 PanacheMongoEntity base
    * 繼承 ReactivePanacheMongoEntity
+   * 使用 PanacheQL  
    * 屬性：
 
    | lastModifiedTime     | Instant?     |    |
        | -------- | -------- | -------- |
    | createdTime     | Instant?     |  預設值為 Instant.now()  |
-
 1. User 繼承 BaseMongoEntity，撰寫 User 的 CRUD 方法
    * create(username: String, password: String, roles: MutableSet<Role>): User
       * 靜態方法，需將使用者輸入的密碼加密後再存入 DB，回傳新增的 User
@@ -66,5 +66,7 @@
      | 註解   | @BeforeAll | @BeforeEach  |  @AfterAll   |  @AfterEach  |
      | -------- | -------- | -------- | -------- | -------- |
      | 執行時機  |   所有 test 開始前  |  每個 test 開始前    |  所有 test 結束後  |   每個 test 結束後     |
+        ps. 使用註解的方法必須為靜態方法，或在 class 層級加上 @TestInstance(TestInstance.Lifecycle.PER_CLASS) 註解，
+   否則執行時會拋錯
 
    * 參考：[QUARKUS - TESTING YOUR APPLICATION](https://quarkus.io/guides/getting-started-testing)
