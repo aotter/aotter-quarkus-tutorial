@@ -27,7 +27,7 @@
    * 屬性 :
 
    | username     | String?     |    皆為小寫  |
-       | -------- | -------- | -------- |
+   | -------- | -------- | -------- |
    | password     | String?     |  為使用者輸入的密碼加密後，標記為 @JsonIgnore  |
    | roles     | MutableSet\<Role>?     |   Role 為自訂的 enum class，預設 Role 為 User   |
 
@@ -38,7 +38,7 @@
    * 屬性：
 
    | lastModifiedTime     | Instant?     |    |
-       | -------- | -------- | -------- |
+   | -------- | -------- | -------- |
    | createdTime     | Instant?     |  預設值為 Instant.now()  |
 
 1. User 繼承 BaseMongoEntity，撰寫 User 的 CRUD 方法
