@@ -53,7 +53,7 @@
     * 在方法上加上註解，以便在測試開始前設置資料，或測試結束後清理資料
 
       | 註解   | @BeforeAll | @BeforeEach  |  @AfterAll   |  @AfterEach  |
-               | -------- | -------- | -------- | -------- | -------- |
+      | -------- | -------- | -------- | -------- | -------- |
       | 執行時機  |   所有 test 開始前  |  每個 test 開始前    |  所有 test 結束後  |   每個 test 結束後     |
 
     * 參考：[QUARKUS - TESTING YOUR APPLICATION](https://quarkus.io/guides/getting-started-testing)
