@@ -8,6 +8,7 @@ import io.quarkus.security.identity.request.TrustedAuthenticationRequest
 import io.smallrye.mutiny.Uni
 import util.uni
 
+@ApplicationScoped
 class MongoTrustedIdentityProvider: AbstractMongoIdentityProvider(), IdentityProvider<TrustedAuthenticationRequest> {
     override fun getRequestType(): Class<TrustedAuthenticationRequest> {
         return TrustedAuthenticationRequest::class.java

@@ -8,6 +8,7 @@ import io.quarkus.security.identity.request.UsernamePasswordAuthenticationReques
 import io.smallrye.mutiny.Uni
 import util.uni
 
+@ApplicationScoped
 class MongoIdentityProvider: AbstractMongoIdentityProvider(), IdentityProvider<UsernamePasswordAuthenticationRequest> {
     override fun getRequestType(): Class<UsernamePasswordAuthenticationRequest> {
         return UsernamePasswordAuthenticationRequest::class.java

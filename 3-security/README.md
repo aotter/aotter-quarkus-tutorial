@@ -19,6 +19,7 @@
 3. 建立 MongoIdentityProvider
     * 套件位置：src.main.kotlin.security
     * 繼承 AbstractMongoIdentityProvider
+    * 需註解為 @ApplicationScoped
     * 實作 IdentityProvider<TrustedAuthenticationRequest>
     * 處理來自可信任的來源（例如加密的cookie）的身份驗證請求
     * override 方法：
@@ -28,6 +29,7 @@
 3. 建立 MongoTrustedIdentityProvider
     * 套件位置：src.main.kotlin.security
     * 繼承 AbstractMongoIdentityProvider
+    * 需註解為 @ApplicationScoped
     * 實作 IdentityProvider<UsernamePasswordAuthenticationRequest>
     * 處理使用用戶名和密碼的簡單身份驗證請求
     * override 方法：
