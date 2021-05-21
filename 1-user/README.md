@@ -62,11 +62,10 @@
    * unit test 的 class 必須註解為 @QuarkusTest
    * 測試的方法必須註解為 @Test
    * 在方法上加上註解，以便在測試開始前設置資料，或測試結束後清理資料
-     
+     > ps. 使用註解的方法必須為靜態方法，或在 class 層級加上 @TestInstance(TestInstance.Lifecycle.PER_CLASS) 註解，否則執行時會拋錯
+  
      | 註解   | @BeforeAll | @BeforeEach  |  @AfterAll   |  @AfterEach  |
      | -------- | -------- | -------- | -------- | -------- |
-     | 執行時機  |   所有 test 開始前  |  每個 test 開始前    |  所有 test 結束後  |   每個 test 結束後     |
-        ps. 使用註解的方法必須為靜態方法，或在 class 層級加上 @TestInstance(TestInstance.Lifecycle.PER_CLASS) 註解，
-   否則執行時會拋錯
+     | 執行時機  |   所有 test 開始前  |  每個 test 開始前    |  所有 test 結束後  |   每個 test 結束後     |    
 
    * 參考：[QUARKUS - TESTING YOUR APPLICATION](https://quarkus.io/guides/getting-started-testing)
