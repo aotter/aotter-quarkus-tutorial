@@ -13,7 +13,7 @@
     * extensions :
         * Alternative languages : Kotlin
         * Data : MongoDB with Panache for Kotlin
-        * Web : RESTEasy reactive Jackson
+        * Web : RESTEasy reactive Jackson, SmallRye OpenAPI
 2. 加入當前必要 dependency
     * [vertx-lang-kotlin-coroutines](https://mvnrepository.com/artifact/io.vertx/vertx-lang-kotlin-coroutines)
     * [mutiny-kotlin](https://mvnrepository.com/artifact/io.smallrye.reactive/mutiny-kotlin)
