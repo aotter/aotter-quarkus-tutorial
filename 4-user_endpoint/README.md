@@ -16,9 +16,10 @@
       * logout
    * 透過 SecurityContext 可存取權限相關資訊
 
-2. 在 src/main/resources/application.properties 內設定允許 Quarkus 的 form authentication
+2. 在 src/main/resources/application.properties 內設定允許 Quarkus form authentication 與 encryption-key
     ```
     quarkus.http.auth.form.enabled = true
+    quarkus.http.auth.session.encryption-key= moXBxFqO1fUCtcYNsQAEWEjm0AXM84kgpi7HKDePq+k=
     ```
 
 3. 整合 vue 與 Quarkus 前後端開發，建立測試登入用的前端頁面
