@@ -1,12 +1,12 @@
-# User Endpoint
+# User Route
 
 ### 流程
 1. 建立 abstract class BaseRoute
     * 套件位置：src.main.kotlin.route
     * 抽出 endpoint 共同的方法
 
-2. 建立 UserEndpoint
-    * 套件位置：src.main.kotlin.endpoint
+2. 建立 UserRoute
+    * 套件位置：src.main.kotlin.route
     * 繼承 BaseRoute
     * api 端點以 @RolesAllowed 註解做權限保護
     * 端點：

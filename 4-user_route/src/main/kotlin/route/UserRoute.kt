@@ -16,7 +16,7 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.SecurityContext
 
 @Path("rest")
-class UserEndpoint: BaseRoute() {
+class UserRoute: BaseRoute() {
 
     data class SignUpRequest(
             @JsonProperty("username") var username: String,
