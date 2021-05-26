@@ -16,29 +16,6 @@
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
-    <a id="login" href="/login.html" class="d-none">登入</a>
-    <div id="login-success" class="d-none">
-      登入成功
-      <button id="logout">登出</button>
-    </div>
     <div id="app"></div>
   </body>
-  <script>
-    (() => {
-      const authCookie = 'quarkus-credential';
-
-      document.querySelector('#logout').addEventListener('click', async () => {
-        const res = await fetch("/rest/logout")
-        if(res.ok) location.reload();
-      });
-      
-      if(document.cookie.indexOf(authCookie) !== -1){
-        document.querySelector('#login-success').classList.remove('d-none');
-      }
-      else{
-        document.querySelector('#login').classList.remove('d-none');
-      }
-
-    })();
-  </script>
 </html>

@@ -4,9 +4,7 @@ import io.quarkus.test.junit.QuarkusTest
 import org.bson.Document
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import repository.ClamDataRepository
-import java.time.Instant
-import javax.inject.Inject
+import java.util.*
 
 @QuarkusTest
 class ClamDataTest {

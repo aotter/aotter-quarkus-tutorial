@@ -1,12 +1,14 @@
-package endpoint
+package route
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.smallrye.mutiny.Uni
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.RoutingContext
 import model.po.User
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
-import route.BaseRoute
 import security.Role
 import javax.annotation.security.RolesAllowed
+import javax.enterprise.event.Observes
 import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Path
@@ -16,7 +18,7 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.SecurityContext
 
 @Path("rest")
-class UserEndpoint: BaseRoute() {
+class UserRoute: BaseRoute() {
 
     data class SignUpRequest(
             @JsonProperty("username") var username: String,
