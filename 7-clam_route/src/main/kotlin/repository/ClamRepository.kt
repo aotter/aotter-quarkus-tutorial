@@ -18,8 +18,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 import org.reactivestreams.Publisher
 import java.time.Instant
-import java.time.LocalDate
-import java.util.*
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,79 +32,80 @@ class ClamDataRepository @Inject constructor(val logger: Logger, val vertx: Vert
     @ConfigProperty(name = "quarkus.mongodb.connection-string")
     private lateinit var uri: String
 
-    private lateinit var mongoClient: MongoClient
-
-    private val PAGE_ENTITY_NUM = 10
+    private lateinit var database: MongoDatabase
 
     @PostConstruct
     fun init(){
-        mongoClient = MongoClients.create(uri)
+        database = MongoClients.create(uri).getDatabase(dbName)
     }
 
     private fun getCol(collectionName: String): MongoCollection<Document> =
-            mongoClient.getDatabase(dbName).getCollection(collectionName).withWriteConcern(WriteConcern.ACKNOWLEDGED)
+            database.getCollection(collectionName).withWriteConcern(WriteConcern.ACKNOWLEDGED)
 
-    suspend fun create(collectionName: String, data: ClamData, author: String): String? {
-        data.apply {
-            this.append(ClamData::collectionName.name, collectionName)
-            this.append(ClamData::authorId.name, author)
-            this.append(ClamData::state.name, State.TEMP.name)
-            this.append(ClamData::createTime.name, Instant.now())
+    suspend fun create(collectionName: String, data: ClamData, author: String): ClamData? {
+        data.collectionName = collectionName
+        data.authorId = author
+        data.state = State.TEMP
+        data.createTime = Instant.now()
+        println(data.collectionName)
+        val result = uniAwait(getCol(collectionName).insertOne(Document(data)))
+        return result?.insertedId?.asObjectId()?.value?.let {
+            data.id = it
+            data
         }
-        val result = uniAwait(getCol(collectionName).insertOne(data))
-        return result?.insertedId?.asObjectId()?.value?.toHexString()
     }
 
-    suspend fun getPublishedEntities(collectionName: String): List<Document> {
+    suspend fun getPublishedEntities(collectionName: String): List<ClamData> {
         return multiAwait(getCol(collectionName).find(eq(ClamData::state.name, State.PUBLISHED.name)))
+                .map { ClamData.documentToClamData(it) }
     }
 
-    suspend fun getPublishedEntityById(collectionName: String, id: String): Document? {
+    suspend fun getPublishedEntityById(collectionName: String, id: String): ClamData? {
         val publisher = getCol(collectionName).find(
                 and(
                         eq(ClamData::state.name, State.PUBLISHED.name),
                         eq("_id", ObjectId(id))
                 )
         ).limit(1)
-        return uniAwait(publisher)
+        return uniAwait(publisher)?.let { ClamData.documentToClamData(it) }
     }
 
-    suspend fun updateEntity(collectionName: String, id: String, data: Document): Document? {
+    suspend fun updateEntity(collectionName: String, id: String, data: ClamData): ClamData? {
         val updates = data.keys.filterNot { it == "id" }
                 .map { set(it, data[it]) }.toMutableList()
         return coroutineUpdate(collectionName, id, updates)
     }
 
-    suspend fun updateEntityState(collectionName: String, id: String, state: State): Document? {
+    suspend fun updateEntityState(collectionName: String, id: String, state: State): ClamData? {
         val updates = mutableListOf<Bson>()
         updates.add(set(ClamData::state.name, state.name))
         if(state == State.PUBLISHED)
             updates.add(set(
                     ClamData::publishedTime.name,
-                    Document("\$ifNull", listOf("\$${ClamData::publishedTime.name}", Date()))
+                    Document("\$ifNull", listOf("\$${ClamData::publishedTime.name}", Instant.now()))
             ))
         updates.add(set(ClamData::state.name, state.name))
         return coroutineUpdate(collectionName, id, updates)
     }
 
-    private suspend fun coroutineUpdate(collectionName: String, id: String, updates: MutableList<Bson>): Document?{
+    private suspend fun coroutineUpdate(collectionName: String, id: String, updates: MutableList<Bson>): ClamData?{
         updates.add(set(ClamData::lastModifiedTime.name, Instant.now()))
         val publisher = getCol(collectionName).findOneAndUpdate(
                 eq(ObjectId(id)),
                 updates,
                 FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(false)
         )
-        return uniAwait(publisher)
+        return uniAwait(publisher)?.let { ClamData.documentToClamData(it) }
     }
 
-    suspend fun getEntityById(collectionName: String, id: String): Document? {
+    suspend fun getEntityById(collectionName: String, id: String): ClamData? {
         val publisher = getCol(collectionName).find(
                 eq("_id", ObjectId(id))
         ).limit(1)
-        return uniAwait(publisher)
+        return uniAwait(publisher)?.let { ClamData.documentToClamData(it) }
     }
 
-    private suspend fun <T> uniAwait(publisher: Publisher<T>): T{
+    private suspend fun <T> uniAwait(publisher: Publisher<T>): T?{
         return Uni.createFrom().publisher(publisher).awaitSuspending()
     }
 

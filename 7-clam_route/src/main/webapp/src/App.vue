@@ -1,17 +1,35 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app">  
+    <Header :isLogin="isLogin" @logout="logout"></Header>
+    <router-view :isLogin="isLogin"></router-view>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import Header from './components/Header.vue'
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    Header
+  },
+  data: () => {
+    return {
+      isLogin: false
+    }
+  },
+  methods: {
+    logout(){
+        fetch('/rest/logout')
+        .then(res => {
+            if(res.ok) this.isLogin = false
+            this.$router.push('/login');
+        })
+    },
+  },
+  mounted(){
+    if(document.cookie.indexOf('quarkus-credential') !== -1){
+      this.isLogin = true
+    }
   }
 }
 </script>

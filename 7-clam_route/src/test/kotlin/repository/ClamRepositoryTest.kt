@@ -12,7 +12,6 @@ import org.bson.Document
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.junit.jupiter.api.*
 import java.time.Instant
-import java.util.*
 import javax.inject.Inject
 
 @QuarkusTest
@@ -28,9 +27,9 @@ class ClamDataRepositoryTest {
 
     private lateinit var col: MongoCollection<Document>
 
-    private lateinit var publishedEntity: Document
+    private lateinit var publishedEntity: ClamData
 
-    private lateinit var unpublishedEntity: Document
+    private lateinit var unpublishedEntity: ClamData
 
     private lateinit var publishedId: String
 
@@ -46,11 +45,18 @@ class ClamDataRepositoryTest {
     fun init(){
         col = MongoClients.create(uri).getDatabase(db).getCollection(TEST_COLLECTION)
 
-        publishedEntity = Document(ClamData::collectionName.name, TEST_COLLECTION)
-                .append(ClamData::state.name, State.PUBLISHED.name)
-                .append(ClamData::publishedTime.name, Instant.now())
-        unpublishedEntity = Document(ClamData::collectionName.name, TEST_COLLECTION)
-                .append(ClamData::state.name, State.TEMP.name)
+        publishedEntity = ClamData()
+        with(publishedEntity) {
+            collectionName = TEST_COLLECTION
+            state = State.PUBLISHED
+            publishedTime = Instant.now()
+        }
+
+        unpublishedEntity = ClamData()
+        with(unpublishedEntity) {
+            collectionName = TEST_COLLECTION
+            state = State.TEMP
+        }
 
         runBlocking {
             publishedId = Uni.createFrom().publisher(col.insertOne(publishedEntity)).awaitSuspending().insertedId!!.asObjectId()!!.value!!.toHexString()
@@ -69,11 +75,11 @@ class ClamDataRepositoryTest {
         testData.append("content", TEST_CONTENT)
         runBlocking {
             val beforeCount = Uni.createFrom().publisher(col.countDocuments()).awaitSuspending()
-            val insertedId = clamDataRepo.create(TEST_COLLECTION, testData, TEST_AUTHOR)
+            val insertedClam = clamDataRepo.create(TEST_COLLECTION, testData, TEST_AUTHOR)
             val afterCount = Uni.createFrom().publisher(col.countDocuments()).awaitSuspending()
             Assertions.assertEquals(afterCount, beforeCount+1)
 
-            val clamData = insertedId?.let { clamDataRepo.getEntityById(TEST_COLLECTION, insertedId) }
+            val clamData = insertedClam?.id?.toHexString()?.let { clamDataRepo.getEntityById(TEST_COLLECTION, it) }
             Assertions.assertEquals(TEST_CATEGORY, clamData?.getString("category"), "entity category")
             Assertions.assertEquals(TEST_TITLE, clamData?.getString("title"), "entity title")
             Assertions.assertEquals(TEST_CONTENT, clamData?.getString("content"), "entity content")
@@ -81,11 +87,11 @@ class ClamDataRepositoryTest {
         }
     }
 
-    fun `check entity initial attributes`(clamData: Document?, author: String, collection: String){
-        Assertions.assertEquals(author, clamData?.getString(ClamData::authorId.name), "created entity authorId")
-        Assertions.assertEquals(State.TEMP.name, clamData?.getString(ClamData::state.name), "created entity state")
-        Assertions.assertEquals(collection, clamData?.getString(ClamData::collectionName.name), "created entity collectionName")
-        Assertions.assertNotNull(clamData?.getDate(ClamData::createTime.name), "created entity createTime")
+    fun `check entity initial attributes`(clamData: ClamData?, author: String, collection: String){
+        Assertions.assertEquals(author, clamData?.authorId, "created entity authorId")
+        Assertions.assertEquals(State.TEMP, clamData?.state, "created entity state")
+        Assertions.assertEquals(collection, clamData?.collectionName, "created entity collectionName")
+        Assertions.assertNotNull(clamData?.createTime, "created entity createTime")
     }
 
     @Test
@@ -93,7 +99,7 @@ class ClamDataRepositoryTest {
         runBlocking {
             clamDataRepo.getPublishedEntities(TEST_COLLECTION).forEach {
                 Assertions.assertEquals(State.PUBLISHED.name, it.getString(ClamData::state.name))
-                Assertions.assertNotNull(it.getDate(ClamData::publishedTime.name))
+                Assertions.assertNotNull(it.publishedTime)
             }
         }
     }
@@ -103,7 +109,7 @@ class ClamDataRepositoryTest {
         runBlocking {
             val publishedEntity = clamDataRepo.getPublishedEntityById(TEST_COLLECTION, publishedId)
             Assertions.assertNotNull(publishedEntity, "get published entity by id")
-            Assertions.assertEquals(State.PUBLISHED.name, publishedEntity?.getString(ClamData::state.name), "published entity state")
+            Assertions.assertEquals(State.PUBLISHED, publishedEntity?.state, "published entity state")
 
             val unpublishedEntity = clamDataRepo.getPublishedEntityById(TEST_COLLECTION, unpublishedId)
             Assertions.assertNull(unpublishedEntity, "get unpublished entity by id")
@@ -115,11 +121,11 @@ class ClamDataRepositoryTest {
         runBlocking {
             val TEST_UPDATE_FIELD = "updateField"
             val TEST_UPDATE_VALUE = "test_update"
-            val updateData = publishedEntity.append(TEST_UPDATE_FIELD, TEST_UPDATE_VALUE)
-            clamDataRepo.updateEntity(TEST_COLLECTION,  publishedId, updateData)
+            publishedEntity.append(TEST_UPDATE_FIELD, TEST_UPDATE_VALUE)
+            clamDataRepo.updateEntity(TEST_COLLECTION,  publishedId, publishedEntity)
             val updatedEntity = clamDataRepo.getEntityById(TEST_COLLECTION, publishedId)
             Assertions.assertEquals(TEST_UPDATE_VALUE, updatedEntity?.getString(TEST_UPDATE_FIELD))
-            Assertions.assertNotNull(updatedEntity?.getDate(ClamData::lastModifiedTime.name))
+            Assertions.assertNotNull(updatedEntity?.lastModifiedTime)
         }
     }
 
@@ -130,17 +136,17 @@ class ClamDataRepositoryTest {
             clamDataRepo.updateEntityState(TEST_COLLECTION, unpublishedId, State.PUBLISHED)
             val publishedEntity = clamDataRepo.getEntityById(TEST_COLLECTION, unpublishedId)
             Assertions.assertEquals(State.PUBLISHED.name, publishedEntity?.getString(ClamData::state.name))
-            val publishedTime = publishedEntity?.getDate(ClamData::publishedTime.name)
+            val publishedTime = publishedEntity?.get(ClamData::publishedTime.name) as Instant?
             Assertions.assertNotNull(publishedTime)
-            Assertions.assertNotEquals(entity?.getDate(ClamData::lastModifiedTime), publishedEntity?.getDate(ClamData::lastModifiedTime.name))
+            Assertions.assertNotEquals(entity?.lastModifiedTime, publishedEntity?.lastModifiedTime)
             `check republish entity won't change initial publishedTime`(publishedTime)
         }
     }
 
-    fun `check republish entity won't change initial publishedTime`(publishedTime: Date?){
+    fun `check republish entity won't change initial publishedTime`(publishedTime: Instant?){
         runBlocking {
             val republishedEntity = clamDataRepo.updateEntityState(TEST_COLLECTION, unpublishedId, State.PUBLISHED)
-            Assertions.assertEquals(publishedTime, republishedEntity?.getDate(ClamData::publishedTime.name))
+            Assertions.assertEquals(publishedTime, republishedEntity?.publishedTime)
         }
     }
 
@@ -150,8 +156,8 @@ class ClamDataRepositoryTest {
             val entity = clamDataRepo.getEntityById(TEST_COLLECTION, publishedId)
             clamDataRepo.updateEntityState(TEST_COLLECTION, publishedId, State.ARCHIVED)
             val archivedEntity = clamDataRepo.getEntityById(TEST_COLLECTION, publishedId)
-            Assertions.assertEquals(State.ARCHIVED.name, archivedEntity?.getString(ClamData::state.name))
-            Assertions.assertNotEquals(entity?.getDate(ClamData::lastModifiedTime), archivedEntity?.getDate(ClamData::lastModifiedTime.name))
+            Assertions.assertEquals(State.ARCHIVED, archivedEntity?.state)
+            Assertions.assertNotEquals(entity?.lastModifiedTime, archivedEntity?.lastModifiedTime)
         }
     }
 

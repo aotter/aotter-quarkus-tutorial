@@ -1,9 +1,8 @@
-package endpoint
+package route
 
 import io.smallrye.mutiny.Uni
 import model.po.ClamData
 import model.po.State
-import org.bson.Document
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
 import repository.ClamDataRepository
 import route.BaseRoute
@@ -16,7 +15,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.SecurityContext
 
 @Path("/api")
-class ClamEndpoint: BaseRoute() {
+class ClamRoute: BaseRoute() {
 
     @Inject
     lateinit var clamDataRepository: ClamDataRepository
@@ -50,7 +49,7 @@ class ClamEndpoint: BaseRoute() {
     @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun getPublishedEntityList(
             @PathParam("collection") collection: String
-    ): Uni<List<Document>> {
+    ): Uni<List<ClamData>> {
         return uni { clamDataRepository.getPublishedEntities(collection) }
     }
 
@@ -61,8 +60,8 @@ class ClamEndpoint: BaseRoute() {
     fun updateExistingEntity(
             @PathParam("collection") collection: String,
             @PathParam("id") id: String,
-            @RequestBody body: Document
-    ): Uni<Document?> = uni { clamDataRepository.updateEntity(collection, id, body) }
+            @RequestBody body: ClamData
+    ): Uni<ClamData?> = uni { clamDataRepository.updateEntity(collection, id, body) }
 
     @Path("{collection}/{id}/state/{state}")
     @PUT
@@ -72,7 +71,7 @@ class ClamEndpoint: BaseRoute() {
             @PathParam("collection") collection: String,
             @PathParam("id") id: String,
             @PathParam("state") state: String
-    ): Uni<Document?> = uni {
+    ): Uni<ClamData?> = uni {
         clamDataRepository.updateEntityState(collection, id, State.valueOf(state))
     }
 
@@ -84,6 +83,6 @@ class ClamEndpoint: BaseRoute() {
             @Context securityContext: SecurityContext,
             @PathParam("collection") collection: String,
             @PathParam("id") id: String
-    ): Uni<Document?> = uni { clamDataRepository.updateEntityState(collection, id, State.ARCHIVED) }
+    ): Uni<ClamData?> = uni { clamDataRepository.updateEntityState(collection, id, State.ARCHIVED) }
 
 }
