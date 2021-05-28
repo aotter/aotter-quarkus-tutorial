@@ -10,12 +10,12 @@ import javax.inject.Inject
 abstract class AbstractMongoIdentityProvider {
 
     @Inject
-    lateinit var vertx: Vertx
+    open lateinit var vertx: Vertx
 
     @Inject
-    lateinit var userRepository: UserRepository
+    open lateinit var userRepository: UserRepository
 
-    fun buildSecurityIdentity(user: User): SecurityIdentity{
+    open fun buildSecurityIdentity(user: User): SecurityIdentity{
         val builder = QuarkusSecurityIdentity.builder()
                 .setPrincipal{ user.username }
         user.roles?.forEach{ builder.addRole(it.name) }
