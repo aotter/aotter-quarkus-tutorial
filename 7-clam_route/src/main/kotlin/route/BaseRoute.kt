@@ -30,15 +30,3 @@ abstract class BaseRoute {
     }
 
 }
-
-/**
- * NotFoundExepptionMapper
- */
-@Provider
-class NotFoundExceptionMapper : ExceptionMapper<NotFoundException?> {
-    override fun toResponse(exception: NotFoundException?): Response {
-        val text: String = Scanner(this.javaClass.getResourceAsStream("/META-INF/resources/index.html"), "UTF-8").useDelimiter("\\A").next()
-//        return Response.status(404).entity(text).build()
-        return Response.status(404).location(URI("index.html")).entity("aaaaaaaa").build()
-    }
-}
