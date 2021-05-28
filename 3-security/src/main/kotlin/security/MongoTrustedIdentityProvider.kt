@@ -7,6 +7,7 @@ import io.quarkus.security.identity.SecurityIdentity
 import io.quarkus.security.identity.request.TrustedAuthenticationRequest
 import io.smallrye.mutiny.Uni
 import util.uni
+import javax.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
 class MongoTrustedIdentityProvider: AbstractMongoIdentityProvider(), IdentityProvider<TrustedAuthenticationRequest> {
