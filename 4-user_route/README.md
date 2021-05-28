@@ -16,6 +16,12 @@
         * logout
     * 透過 SecurityContext 可存取權限相關資訊
 
+2. 建立 UserRoute 的 unit test, UserRouteTest
+   * 套件位置：src.test.kotlin.route
+   * 使用 [rest-assured](https://github.com/rest-assured/rest-assured/wiki/GettingStarted) 做 API 的測試
+   * security 測試額外的設定
+      * 參考：[QUARKUS - SECURITY TESTING](https://quarkus.io/guides/security-testing)
+   
 2. 在 src/main/resources/application.properties 內設定允許 Quarkus form authentication 與 encryption-key
     ```
     quarkus.http.auth.form.enabled = true
