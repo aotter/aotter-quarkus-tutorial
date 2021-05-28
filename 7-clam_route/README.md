@@ -16,3 +16,14 @@
 1. 建立 ClamEndpoint
     * 套件位置：src.main.kotlin.endpoint
     * 繼承 BaseRoute
+2. 建立 abstract class ClamSetup
+    * 套件位置：src.test.kotlin.setup
+    * 因 Clam 的 unit test 前置流程較為繁瑣
+        * 將 @BeforeEach 與 @AfterEach 的方法抽到 abstract class
+        * ClamRepositoryTest 和 ClamRouteTest 將繼承 ClamSetup
+2. 建立 ClamRoute 的 unit test, ClamRouteTest
+    * 套件位置：src.test.kotlin.route
+    * 繼承 ClamSetup
+    * 使用 [rest-assured](https://github.com/rest-assured/rest-assured/wiki/GettingStarted) 做 API 的測試
+    * security 測試額外的設定
+        * 參考：[QUARKUS - SECURITY TESTING](https://quarkus.io/guides/security-testing)    
