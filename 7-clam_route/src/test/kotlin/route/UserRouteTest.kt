@@ -116,7 +116,7 @@ class UserRouteTest: BaseRoute() {
             given()
                     .cookie("quarkus-credential", "test-credential")
                     .`when`()
-                    .get("/rest/me")
+                    .get("/rest/logout")
                     .then()
                     .statusCode(200)
                     .cookie("quarkus-credential", nullValue())
