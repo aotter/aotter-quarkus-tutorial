@@ -2,5 +2,8 @@
 /shelf/
 /workspace.xml
 /.idea
+**/*.iml
+*/.idea/*
+*/target/*
 node_modules/
 META-INF/
