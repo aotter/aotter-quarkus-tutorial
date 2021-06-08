@@ -43,7 +43,7 @@ class UserRepositoryTest {
 
     private lateinit var collection: MongoCollection<User>
 
-    @BeforeAll
+    @BeforeEach
     fun init(){
         val pojoCodecRegistry: CodecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                 CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build()))
@@ -185,7 +185,7 @@ class UserRepositoryTest {
         }
     }
 
-    @AfterAll
+    @AfterEach
     fun clean(){
         runBlocking {
             Uni.createFrom().publisher(collection.drop()).awaitSuspending()
