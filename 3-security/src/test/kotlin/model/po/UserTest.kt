@@ -123,12 +123,12 @@ class UserTest {
         return Uni.createFrom().publisher(publisher).awaitSuspending()
     }
 
-//    @AfterAll
-//    fun clean(){
-//        runBlocking {
-//            uniAwait(collection.drop())
-//        }
-//    }
+    @AfterAll
+    fun clean(){
+        runBlocking {
+            uniAwait(collection.drop())
+        }
+    }
 
 
 }
