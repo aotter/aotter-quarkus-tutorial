@@ -1,4 +1,4 @@
-package router
+package route
 
 import setup.ClamSetup
 import io.quarkus.test.junit.QuarkusTest

@@ -1,4 +1,4 @@
-package router
+package route
 
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.security.TestSecurity
@@ -10,7 +10,6 @@ import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.*
 import org.junit.jupiter.api.*
 import repository.UserRepository
-import route.BaseRoute
 import security.Role
 import javax.inject.Inject
 

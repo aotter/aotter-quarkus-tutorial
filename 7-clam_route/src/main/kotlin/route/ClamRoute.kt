@@ -5,7 +5,6 @@ import model.po.ClamData
 import model.po.State
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
 import repository.ClamDataRepository
-import route.BaseRoute
 import security.Role
 import javax.annotation.security.RolesAllowed
 import javax.inject.Inject
