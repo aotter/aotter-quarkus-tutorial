@@ -21,14 +21,14 @@ class ClamRoute: BaseRoute() {
 
     @Path("{collection}")
     @POST
-    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+    @RolesAllowed(Role.ADMIN_CONSTANT)
     fun createNewEntity(
             @Context securityContext: SecurityContext,
             @PathParam("collection") collection: String,
             @RequestBody body: ClamData
-    ){
+    ): Uni<ClamData?> {
         val author = securityContext.userPrincipal.name
-        uni {
+        return uni {
             clamDataRepository.create(collection, body, author)
         }
     }
