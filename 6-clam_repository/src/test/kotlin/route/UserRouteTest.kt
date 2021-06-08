@@ -112,14 +112,14 @@ class UserRouteTest: BaseRoute() {
 
     @Test
     fun `user logout`(){
-        GlobalScope.launch {
+        runBlocking {
             given()
                     .cookie("quarkus-credential", "test-credential")
                     .`when`()
                     .get("/rest/logout")
                     .then()
                     .statusCode(200)
-                    .cookie("quarkus-credential", nullValue())
+                    .cookie("quarkus-credential", "")
         }
     }
 
