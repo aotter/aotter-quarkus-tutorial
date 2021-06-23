@@ -2,6 +2,22 @@
 ### 說明
 * 透過 HttpAuthenticationMechanism，Quarkus 會從 HTTP request 中獲取可驗證的憑證，再交由 [IdentityProvider](https://quarkus.io/guides/security#identity-providers) 將憑證轉換為 SecurityIdentity
 * 這邊使用 [Form Based Authentication](https://quarkus.io/guides/security-built-in-authentication#form-auth)
+  * 補充：quarkus-credential cookie 更新行為主要由這兩個 config 控制： 
+    * **quarkus.http.auth.form.new-cookie-interval**：  
+      當距離 cookie 產生的時間大於此設定值後，產生新的 cookie 替換舊的（同時會更新 expire time）
+    * **quarkus.http.auth.form.timeout**：  
+      當距離 cookie 產生的時間大於此設定值後，不再更新 cookie，而是在下次請求時強制重新登入
+      * 預設行為是重導回 login-page，並加上一個 key 為 quarkus-redirect-location、value 為請求路徑的 cookie，  
+      在重新登入後直接重導回 cookie 紀錄的網址
+  * 舉例：
+    ```
+    quarkus.http.auth.form.new-cookie-interval=PT10M
+    quarkus.http.auth.form.timeout=PT30M
+    
+    // 只要距上次請求時間大於 10 分鐘小於 30 分鐘，就會更新 cookie 與其 expire time
+    // 但當距上次請求時間大於 30 分鐘，則會強制重新登入 
+    ```
+      
 * 提供實作 [Quarkus IdentityProvider](https://quarkus.io/guides/security#identity-providers) 的類別，Quarkus 會透過類別實作的 authenticate( ) 方法驗證使用者身份
 * 參考：[QUARKUS - SECURITY ARCHITECTURE AND GUIDES
   ](https://quarkus.io/guides/security)
