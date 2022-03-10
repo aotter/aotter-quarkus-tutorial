@@ -32,7 +32,7 @@
     * 抽出實作 IdentityProvider 的類別共同的方法：
         * buildSecurityIdentityProvider( ): SecurityIdentityProvider
 
-3. 建立 MongoIdentityProvider
+3. 建立 MongoTrustedIdentityProvider
     * 套件位置：src.main.kotlin.security
     * 繼承 AbstractMongoIdentityProvider
     * 需註解為 @ApplicationScoped
@@ -42,7 +42,7 @@
         * getRequestType( )
         * authentication( )
     
-3. 建立 MongoTrustedIdentityProvider
+3. 建立 MongoIdentityProvider
     * 套件位置：src.main.kotlin.security
     * 繼承 AbstractMongoIdentityProvider
     * 需註解為 @ApplicationScoped
