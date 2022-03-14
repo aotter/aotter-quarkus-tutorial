@@ -2,10 +2,7 @@
 ### 說明
 * 建立與資料庫溝通的 UserRepository
 * 使用 [Quarkus MongoDB with Panache](https://quarkus.io/guides/mongodb-panache) 的 reactive 版本
-* Panache 提供兩種 pattern
-    * [active record pattern](https://quarkus.io/guides/mongodb-panache#solution-1-using-the-active-record-pattern)
-    * [repository pattern](https://quarkus.io/guides/mongodb-panache#solution-2-using-the-repository-pattern)
-      ，UserRepository 將使用此 pattern
+* Panache 提供兩種 pattern，本單元則是透過[repository pattern](https://quarkus.io/guides/mongodb-panache#solution-2-using-the-repository-pattern) 實作 UserRepository
 * 以 abstract class BaseMongoRepository 包裝 UserRepository 的 CRUD；
     * BaseMongoRepository 將實作 ReactivePanacheMongoRepository，UserRepository 再繼承 BaseMongoRepository
 

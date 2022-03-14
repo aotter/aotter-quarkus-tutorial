@@ -1,11 +1,8 @@
 # User
 ### 說明
 * 建立與資料庫溝通的 User data class
-* 使用 [Quarkus MongoDB with Panache](https://quarkus.io/guides/mongodb-panache) 的 reactive 版本
-* Panache 提供兩種 pattern
-   * [active record pattern](https://quarkus.io/guides/mongodb-panache#solution-1-using-the-active-record-pattern)
-     ，User 將使用此 pattern
-   * [repository pattern](https://quarkus.io/guides/mongodb-panache#solution-2-using-the-repository-pattern)
+* ORM 框架使用 [Quarkus MongoDB with Panache](https://quarkus.io/guides/mongodb-panache) 的 reactive 版本
+* Panache 提供兩種 pattern，本單元會先透過 [active record pattern](https://quarkus.io/guides/mongodb-panache#solution-1-using-the-active-record-pattern) 實作 User
 * 以 abstract class BaseMongoEntity 包裝 User 的 CRUD；
    * BaseMongoEntity 將繼承 ReactivePanacheMongoEntity，User 再繼承 ReactivePanacheMongoEntity
 

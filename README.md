@@ -22,3 +22,6 @@
      * Login，登入頁面，登入成功重導至 Home，失敗重導至 Error
      * BackStage，一般使用者顯示為文章發佈頁，管理者顯示使用者及文章管理頁
      * Error，登入失敗的重導頁面
+3. 部署相關 - 
+   * [Quarkus jib](https://quarkus.io/guides/container-image#jib)
+   * [GitHub Actions](https://github.com/features/actions)

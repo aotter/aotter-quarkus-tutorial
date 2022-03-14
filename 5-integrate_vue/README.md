@@ -1,6 +1,6 @@
-# Integrate Vue
+# Integrate Quarkus Qute 跟 Vue
 ### 說明
-* 上個步驟使用純 HTML / JS 做前端畫面，這個步驟要用 Vue 改寫前端
+* 上個步驟使用純 HTML / JS 做前端畫面，這個步驟要用 Quarkus Qute 跟 Vue 改寫前端
 * 整合 Vue 與 Quarkus 前後端開發，建立測試登入用的前端頁面
     * 參考：[Build, run and deploy Vuejs app with Quarkus](https://medium.com/@dmi3coder/build-run-and-deploy-vuejs-app-with-quarkus-d6d1ae94ced9)
         * 前端專案位於 src/main/webapp 資料夾，編譯完的檔案會在 src/main/resources/META-INF/resources 下
