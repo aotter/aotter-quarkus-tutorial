@@ -67,7 +67,6 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-security</artifactId>
-      <version>1.13.1.Final</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/io.quarkus/quarkus-resteasy-reactive-qute -->
     <dependency>
