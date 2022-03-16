@@ -2,13 +2,11 @@ package model.po
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.quarkus.elytron.security.common.BcryptUtil
-import io.quarkus.mongodb.panache.MongoEntity
 import org.wildfly.security.password.PasswordFactory
 import org.wildfly.security.password.interfaces.BCryptPassword
 import org.wildfly.security.password.util.ModularCrypt
 import security.Role
 
-@MongoEntity
 data class User(
         var username: String? = null,
 

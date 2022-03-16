@@ -1,14 +1,22 @@
 package article
 
+import com.mongodb.client.model.Filters
 import io.quarkus.qute.CheckedTemplate
-import io.quarkus.qute.TemplateExtension
 import io.quarkus.qute.TemplateInstance
+import org.bson.conversions.Bson
+import repository.ArticleRepository
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.*
 import javax.inject.Inject
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 
-@Path("article-list")
-@TemplateExtension
+
+@Consumes(MediaType.TEXT_HTML)
+@Produces(MediaType.TEXT_HTML)
+@Path("/")
 class ArticleListResource {
 
     @Inject
@@ -17,78 +25,34 @@ class ArticleListResource {
     @CheckedTemplate
     object Templates {
         @JvmStatic
-        external fun articleList(articleList: List<ArticleView>?): TemplateInstance?
+        external fun articleList(articleList: List<ArticleView>?): TemplateInstance
     }
 
     @GET
-    @Consumes(MediaType.TEXT_HTML)
-    @Produces(MediaType.TEXT_HTML)
-    fun getAllArticleList(): TemplateInstance? {
-//        val articleList = articleRepository.findAsList()
-//        println("===============================")
-//        println("articleList=$articleList")
-//        println("===============================")
+    @Path("article-list")
+    suspend fun getAllArticleList( @QueryParam("author") author: String?): TemplateInstance {
+        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+            .withLocale(Locale.TAIWAN)
+            .withZone(ZoneId.systemDefault())
 
-        val articleList: MutableList<ArticleView> = ArrayList()
-        articleList.add(ArticleView(
-            id = "622ff971a9aff08e2b0d7e25",
-            category =  "分類一",
-            title =  "測試標題一",
-            content = "測試內容一",
-            author = "914",
-            lastModifiedTime = "2022/03/12"))
+        val filters = mutableListOf<Bson>()
+        filters.add(Filters.eq("enabled", true))
+        if(author != null){
+            filters.add(Filters.eq("author", author))
+        }
 
-        articleList.add(ArticleView(
-            id = "622ffab0a9aff08e2b0d7ea0",
-            category =  "分類三",
-            title =  "測試標題二",
-            content = "測試內容二測試內容二",
-            author = "915",
-            lastModifiedTime = "2022/03/14"))
-
-        articleList.add(ArticleView(
-            id = "622ffab0a9aff08e2b0d7ea0",
-            category =  "分類三",
-            title =  "測試標題三",
-            content = "測試內容三測試內容三測試內容三",
-            author = "916",
-            lastModifiedTime = "2022/03/14"))
-
-        articleList.add(ArticleView(
-            id = "622ffab0a9aff08e2b0d7ea0",
-            category =  "分類二",
-            title =  "測試標題四",
-            content = "測試內容四測試內容四//測試內容四測試內容四//",
-            author = "917",
-            lastModifiedTime = "2022/03/14"))
-
-
-        articleList.add(ArticleView(
-            id = "622ffab0a9aff08e2b0d7ea0",
-            category =  "分類一",
-            title =  "測試標題五",
-            content = "測試內容五～測試內容五～測試內容五～測試內容五～測試內容五～",
-            author = "918",
-            lastModifiedTime = "2022/03/14"))
-
-
-        articleList.add(ArticleView(
-            id = "622ffab0a9aff08e2b0d7ea0",
-            category =  "分類四",
-            title =  "測試標題六",
-            content = "測試內容六！測試內容六！測試內容六！測試內容六！測試內容六！測試內容六！",
-            author = "919",
-            lastModifiedTime = "2022/03/14"))
-
-        articleList.add(ArticleView(
-            id = "622ffab0a9aff08e2b0d7ea0",
-            category =  "分類三",
-            title =  "測試標題七",
-            content = "測試內容七測試內容七，測試內容七測試內容七測試內容七。測試內容七測試內容七",
-            author = "920",
-            lastModifiedTime = "2022/03/14"))
-
-        return Templates.articleList(articleList)
+        return Templates.articleList(articleRepository.findAsList(Filters.and(filters))
+            .sortedByDescending { it.lastModifiedTime }
+            .map {
+            ArticleView(
+                id = it.id.toString(),
+                category =  it.category,
+                title =  it.title,
+                content = it.content,
+                author = it.author,
+                lastModifiedTime = formatter.format( it.lastModifiedTime )
+            )
+        })
     }
 
     data class ArticleView(
