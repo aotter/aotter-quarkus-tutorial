@@ -3,6 +3,7 @@ package repository
 import com.mongodb.WriteConcern
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Sorts
+import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.mongodb.reactivestreams.client.MongoDatabase
@@ -16,12 +17,16 @@ import org.reactivestreams.Publisher
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.annotation.PostConstruct
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ArticleRepository: BaseMongoRepository<Article>() {
 
     private lateinit var database: MongoDatabase
+
+    @ConfigProperty(name = "quarkus.mongodb.col.article")
+    private lateinit var articleCol: String
 
     @ConfigProperty(name = "quarkus.mongodb.database")
     private lateinit var dbName: String
@@ -31,16 +36,16 @@ class ArticleRepository: BaseMongoRepository<Article>() {
 
     private val PAGE_ENTITY_NUM = 6
 
+    private lateinit var articleColl: MongoCollection<Document>
+
     @PostConstruct
     fun init(){
         database = MongoClients.create(uri).getDatabase(dbName)
+        articleColl = database.getCollection(articleCol).withWriteConcern(WriteConcern.ACKNOWLEDGED)
     }
 
-    private fun getCol(): MongoCollection<Document> =
-        database.getCollection("Article").withWriteConcern(WriteConcern.ACKNOWLEDGED)
-
     suspend fun findArticleListViaPage(filters: MutableList<Bson>, page: Int): List<ArticleView>{
-        val result = getCol().find(Filters.and(filters))
+        val result = articleColl.find(Filters.and(filters))
             .sort(Sorts.descending("lastModifiedTime"))
             .skip((page - 1) * PAGE_ENTITY_NUM)
             .limit(PAGE_ENTITY_NUM)
@@ -54,6 +59,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
                 title = it["title"] as String,
                 content = it["content"] as String,
                 author = it["author"] as String,
+                userId = it["userId"] as String,
                 lastModifiedTime = sdFormat.format(it["lastModifiedTime"] as Date)
             )
         }
@@ -65,6 +71,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
 
     data class ArticleView(
         val id: String? = null,
+        val userId: String? = null,
         val category: String? = null,
         val title: String? = null,
         val content: String? = null,

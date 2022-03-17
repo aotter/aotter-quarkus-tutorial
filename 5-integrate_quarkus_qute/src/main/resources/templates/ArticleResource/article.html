@@ -15,10 +15,10 @@
 
     <div class="container">
         <div class="blog-post">
-            <h2 class="blog-post-title">{title}</h2>
-            <p class="blog-post-meta">{lastModifiedTime} by <a href="/article-list?author={author}">{author}</a></p>
+            <h2 class="blog-post-title">{article.title}</h2>
+            <p class="blog-post-meta">{article.lastModifiedTime} by <a href="/article-list?userId={article.userId}">{article.author}</a></p>
 
-            <p>{content}</p>
+            <p>{article.content}</p>
             <hr>
         </div>
     </div>

@@ -11,15 +11,20 @@
 ### 流程
 1. 環境設置
    * 加入 [quarkus-resteasy-reactive-qute](https://mvnrepository.com/artifact/io.quarkus/quarkus-resteasy-reactive-qute) dependency
-   * 確認 quarkus 的版本應為 2.1.0.Final
+   * 確認 quarkus 的版本應為 2.1.0 以上
+   * 將資料匯入MongoDB
+     * [User.json](https://www.dropbox.com/s/wgvd1c03p8hy2ef/User.json?dl=0)
+     * [Article.json](https://www.dropbox.com/s/znkgbtgtf5feyeh/Article.json?dl=0)
+   
+2. 建立 article 跟 articleList html
+    * 套件位置：src.main.resources.templates.ArticleResource
 
+3. 實作 findArticleListViaPage function
+   * 套件位置：src.main.kotlin.repository.ArticleRepository
 
+4. 建立 class ArticleResource 
+    * 套件位置：src.main.kotlin.resource
+    * 實作方法：
+      * 將 Templates 以 static fun 加入（ 對應 html 檔案位置等於 class 名稱/ template function 名稱 eg. ArticleResource/article.html）
+      * 新增 [GET][ /article ] 跟 [GET][ /article-list ]
 
-
-
-2. 在 src/main/resources 下建立 templates
-
-3. 新增 Article的 model 在 src/main/kotlin/model/po 下
-4. 新增 ArticleRepository 在 src/main/kotlin/repository 下
-5. 建立 src/main/kotlin下，建立 resource
-6. 撰寫前端頁面 article.html 以及 ArticleListResource/articleList.html

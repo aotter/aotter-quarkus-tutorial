@@ -6,6 +6,7 @@ import java.time.Instant
 
 data class Article(
     var id: ObjectId? = null,
+    var userId: String? = null,
     var author: String? = null,
     var category: String? = null,
     var title: String? = null,

@@ -30,7 +30,7 @@
         * findAsFlow(filter: Bson?, findOptions: FindOptions): Flow<Entity>
         * count(filter: Bson): Long
         * findOne(filter: Bson): Entity?
-1. 建立 UserRepository
+3. 建立 UserRepository
     * 套件位置：src.main.kotlin.repository
     * 繼承 BaseMongoRepository<User>
     * 需註解為 @Singleton
@@ -41,7 +41,7 @@
             * 在 initializer block 內
         * findByUserName(username: String?): User?
 
-3. 建立 UserRepository 的 unit test, UserRepositoryTest
+4. 建立 UserRepository 的 unit test, UserRepositoryTest
     * 套件位置：src.test.kotlin.repository
     * 在 src/main/resources/application.properties 內設定 unit test 用的 mongoDB 連線字串
     ```

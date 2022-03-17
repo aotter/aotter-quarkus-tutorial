@@ -18,11 +18,11 @@
     ```
    * 參考：[QUARKUS - CONFIGURING YOUR APPLICATION](https://quarkus.io/guides/config)
 
-1. 建立 enum class Role
+2. 建立 enum class Role
    * 套件位置：src.main.kotlin.security
    * USER, ADMIN
 
-1. 建立 data class User
+3. 建立 data class User
    * 套件位置：src.main.kotlin.model.po
    * 屬性 :
 
@@ -31,7 +31,7 @@
    | password     | String?     |  為使用者輸入的密碼加密後，標記為 @JsonIgnore  |
    | roles     | MutableSet\<Role>?     |   Role 為自訂的 enum class，預設 Role 為 User   |
 
-1. 建立 abstract class BaseMongoEntity
+4. 建立 abstract class BaseMongoEntity
    * 套件位置：src.main.kotlin.model.po
    * 是一個通用的 PanacheMongoEntity base
    * 繼承 ReactivePanacheMongoEntity
@@ -41,7 +41,7 @@
    | lastModifiedTime     | Instant?     |    |
    | -------- | -------- | -------- |
    | createdTime     | Instant?     |  預設值為 Instant.now()  |
-1. User 繼承 BaseMongoEntity，撰寫 User 的 CRUD 方法
+5. User 繼承 BaseMongoEntity，撰寫 User 的 CRUD 方法
    * create(username: String, password: String, roles: MutableSet<Role>): User
       * 靜態方法，需將使用者輸入的密碼加密後再存入 DB，回傳新增的 User
       * 使用 [quarkus-elytron-security-common](https://mvnrepository.com/artifact/io.quarkus/quarkus-elytron-security-common/1.13.4.Final) 加密
@@ -52,7 +52,7 @@
    * verifyPassword(passwordToVerify: CharArray): Boolean
       * 回傳驗證的結果
 
-1. 建立 User 的 unit test, UserTest
+6. 建立 User 的 unit test, UserTest
    * 套件位置：src.test.kotlin.model.po
    * 在 src/main/resources/application.properties 內設定 unit test 用的 mongoDB 連線字串
     ```
