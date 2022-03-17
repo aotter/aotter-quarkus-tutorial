@@ -1,6 +1,7 @@
 package model.po
 
 import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheMongoEntity
+import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheMongoEntityBase
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import java.time.Instant
@@ -14,13 +15,13 @@ abstract class BaseMongoEntity<T>(
 ): ReactivePanacheMongoEntity() {
 
     @Suppress("UNCHECKED_CAST")
-    fun save(): Uni<T> {
+    fun <T : ReactivePanacheMongoEntityBase> save(): Uni<T> {
         lastModifiedTime = lastModifiedTime?.let { Instant.now() } ?: createdTime
-        return persistOrUpdate()
-                .map { this as T }
+        return persistOrUpdate<T>()
+            .map { this as T }
     }
 
-    suspend fun coroutineSave(): T{
-        return save().awaitSuspending()
+    suspend fun <T : ReactivePanacheMongoEntityBase> coroutineSave(): T {
+        return save<T>().awaitSuspending()
     }
 }

@@ -66,7 +66,4 @@ abstract class BaseMongoRepository<Entity : Any>: ReactivePanacheMongoRepository
     suspend fun findOne(filter: Bson): Entity? =
             col.find(filter, FindOptions().limit(1)).collect().asList().awaitSuspending().firstOrNull()
 
-    suspend fun find(filter: Bson): Entity? =
-        col.find(filter, FindOptions()).collect().asList().awaitSuspending().firstOrNull()
-
 }

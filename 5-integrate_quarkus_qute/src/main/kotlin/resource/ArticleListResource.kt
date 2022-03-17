@@ -1,4 +1,4 @@
-package article
+package resource
 
 import com.mongodb.client.model.Filters
 import io.quarkus.qute.CheckedTemplate

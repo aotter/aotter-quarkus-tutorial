@@ -28,18 +28,18 @@
     <div class="album py-5 bg-light">
         <div class="container">
             <div class="row">
-                {#for article in articleList}
+                {#for resource in articleList}
                     <div class="col-md-6">
                         <div class="card flex-md-row mb-4 shadow-sm h-md-250">
                             <div class="card-body d-flex flex-column align-items-start" style="position: relative;">
-                                <strong class="d-inline-block mb-2 text-primary">{article.category}</strong>
+                                <strong class="d-inline-block mb-2 text-primary">{resource.category}</strong>
                                 <h3 class="mb-0">
-                                    <a class="text-dark" href="/article?articleId={article.id}">{article.title}</a>
+                                    <a class="text-dark" href="/article?articleId={resource.id}">{resource.title}</a>
                                 </h3>
-                                <div class="mb-1 text-muted">最後更新時間：{article.lastModifiedTime}</div>
-                                <p class="card-text mb-auto">作者：{article.author}</p>
+                                <div class="mb-1 text-muted">最後更新時間：{resource.lastModifiedTime}</div>
+                                <p class="card-text mb-auto">作者：{resource.author}</p>
                                 <div style="position: absolute;  right: 15px; bottom: 8px">
-                                    <a href="/article?articleId={article.id}" >閱讀文章...</a>
+                                    <a href="/article?articleId={resource.id}" >閱讀文章...</a>
                                 </div>
                             </div>
                         </div>

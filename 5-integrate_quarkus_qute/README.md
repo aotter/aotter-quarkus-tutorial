@@ -8,9 +8,18 @@
       * 前端專案位於 src/main/resources/templates 資料夾下
 
 
-### 步驟
-1. 前端環境設置
+### 流程
+1. 環境設置
    * 加入 [quarkus-resteasy-reactive-qute](https://mvnrepository.com/artifact/io.quarkus/quarkus-resteasy-reactive-qute) dependency
-   2. 在 src/main/resources 下建立 templates
+   * 確認 quarkus 的版本應為 2.1.0.Final
 
-3. 撰寫前端頁面 article-list.html 以及 articles/article.html
+
+
+
+
+2. 在 src/main/resources 下建立 templates
+
+3. 新增 Article的 model 在 src/main/kotlin/model/po 下
+4. 新增 ArticleRepository 在 src/main/kotlin/repository 下
+5. 建立 src/main/kotlin下，建立 resource
+6. 撰寫前端頁面 article.html 以及 ArticleListResource/articleList.html
