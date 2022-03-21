@@ -11,14 +11,14 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.SecurityContext
 
 
-@Path("/article")
 class ArticleRoute: BaseRoute() {
 
     @Inject
     lateinit var articleRepository: ArticleRepository
 
     @POST
-    @Path("/create")
+//    @Path("/create")
+    @Path("/article")
     fun createArticle(
         @Context securityContext: SecurityContext,
         @RequestBody body: Article): Uni<Article?> {
@@ -29,18 +29,8 @@ class ArticleRoute: BaseRoute() {
     }
 
     @GET
-    @Path("/article-list")
-    fun getArticleListByUser(
-        @Context securityContext: SecurityContext,
-        @QueryParam("page") page: Int?): Uni<List<ArticleView>> {
-        val author = securityContext.userPrincipal.name
-        return uni {
-            articleRepository.getArticleListByUser(author,page?:1)
-        }
-    }
-
-    @GET
-    @Path("/article-content")
+//    @Path("/article-content")
+    @Path("/article")
     fun getArticleById(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Uni<Article?> {
@@ -51,7 +41,8 @@ class ArticleRoute: BaseRoute() {
     }
 
     @PUT
-    @Path("/edit-article")
+//    @Path("/edit-article")
+    @Path("/article")
     fun editArticle(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String,
@@ -63,7 +54,8 @@ class ArticleRoute: BaseRoute() {
     }
 
     @DELETE
-    @Path("/delete-article")
+//    @Path("/delete-article")
+    @Path("/article")
     fun deleteArticle(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Uni<Article?> {
@@ -73,4 +65,15 @@ class ArticleRoute: BaseRoute() {
         }
     }
 
+    @GET
+    @Path("/article-list")
+    fun getArticleListByUser(
+        @Context securityContext: SecurityContext,
+        @QueryParam("page") page: Int?): Uni<List<ArticleView>> {
+        val author = securityContext.userPrincipal.name
+        println("author=$author")
+        return uni {
+            articleRepository.getArticleListByUser(author,page?:1)
+        }
+    }
 }

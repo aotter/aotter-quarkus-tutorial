@@ -9,7 +9,6 @@ import io.smallrye.mutiny.Multi
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import model.po.Article
-import model.po.ClamData
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
@@ -19,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.*
 import javax.annotation.PostConstruct
+import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.collections.List
 
@@ -39,6 +39,9 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     @ConfigProperty(name = "quarkus.mongodb.connection-string")
     private lateinit var uri: String
 
+    @Inject
+    lateinit var userRepository: UserRepository
+
     private lateinit var articleColl: MongoCollection<Document>
     private lateinit var userColl: MongoCollection<Document>
 
@@ -52,7 +55,10 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     }
 
     suspend fun createArticle(data: Article, author: String): Article? {
+        val user = userRepository.findByUserId(author)
         data.author = author
+        data.authorName = user?.username
+        data.enabled = true
         data.createdTime = Instant.now()
         data.lastModifiedTime = Instant.now()
 
@@ -113,7 +119,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     }
 
     private suspend fun coroutineUpdate(id: String, updates: MutableList<Bson>): Article?{
-        updates.add(Updates.set(ClamData::lastModifiedTime.name, Instant.now()))
+        updates.add(Updates.set(Article::lastModifiedTime.name, Instant.now()))
         val publisher = articleColl.findOneAndUpdate(
             Filters.eq(ObjectId(id)),
             updates,

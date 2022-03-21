@@ -5,6 +5,7 @@ import com.mongodb.client.model.IndexModel
 import com.mongodb.client.model.IndexOptions
 import com.mongodb.client.model.Indexes
 import model.po.User
+import org.bson.types.ObjectId
 import javax.inject.Singleton
 
 @Singleton
@@ -21,4 +22,5 @@ class UserRepository: BaseMongoRepository<User>() {
 
     suspend fun findByUsername(username: String) = findOne(Filters.eq(User::username.name, username))
 
+    suspend fun findByUserId(userId: String) = findOne(Filters.eq(User::_id.name, ObjectId(userId)))
 }

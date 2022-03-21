@@ -10,16 +10,19 @@ import java.util.*
 
 class Article: Document(){
     var id: ObjectId? = null
-//    var userId: String? = null
-//        set(value) {
-//            field = value
-//            put(Article::userId.name, value)
-//        }
+
     var author: String? = null
         set(value) {
             field = value
             put(Article::author.name, value)
         }
+
+    var authorName: String? = null
+        set(value) {
+            field = value
+            put(Article::authorName.name, value)
+        }
+
     var category: String? = null
         set(value) {
             field = value
@@ -56,8 +59,8 @@ class Article: Document(){
     companion object {
         fun documentToArticle(document: Document): Article{
             val article = Article()
-//            article.userId = document.getString(Article::userId.name)
             article.author = document.getString(Article::author.name)
+            article.authorName = document.getString(Article::authorName.name)
             article.category = document.getString(Article::category.name)
             article.title = document.getString(Article::title.name)
             article.content = document.getString(Article::content.name)
