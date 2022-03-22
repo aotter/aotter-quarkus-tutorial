@@ -35,7 +35,7 @@ class ArticleResource {
     }
 
     @GET
-    @Path("/article")
+    @Path("/article-content")
     suspend fun article(@QueryParam("articleId") articleId: String?): TemplateInstance {
         val result = articleRepository.findOne(
             Filters.and(
@@ -51,7 +51,7 @@ class ArticleResource {
             content = result.content,
             lastModifiedTime = formatter.format(result.lastModifiedTime),
             author = result.author,
-            userId = result.userId
+            authorName = result.authorName
         ))
     }
 
