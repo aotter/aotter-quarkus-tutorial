@@ -4,7 +4,6 @@ import com.mongodb.client.model.Filters
 import io.quarkus.qute.CheckedTemplate
 import io.quarkus.qute.TemplateInstance
 import org.bson.conversions.Bson
-import org.bson.types.ObjectId
 import repository.ArticleRepository
 import repository.ArticleRepository.ArticleView
 import java.time.ZoneId
@@ -18,6 +17,7 @@ import kotlin.math.ceil
 
 @Consumes(MediaType.TEXT_HTML)
 @Produces(MediaType.TEXT_HTML)
+@Path("/")
 class ArticleResource {
 
     @Inject
@@ -35,12 +35,9 @@ class ArticleResource {
     }
 
     @GET
-    @Path("/article-content")
-    suspend fun article(@QueryParam("articleId") articleId: String?): TemplateInstance {
-        val result = articleRepository.findOne(
-            Filters.and(
-                Filters.eq("enabled", true),
-                Filters.eq("_id",ObjectId(articleId))))
+    @Path("article-content")
+    suspend fun article(@QueryParam("articleId") articleId: String): TemplateInstance {
+        val result = articleRepository.getArticleById(articleId)
 
         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
             .withLocale(Locale.TAIWAN)
@@ -56,17 +53,17 @@ class ArticleResource {
     }
 
     @GET
-    @Path("/article-list")
-    suspend fun getAllArticleList(@QueryParam("userId") userId: String?, @QueryParam("page") page: Int?): TemplateInstance {
-
+    @Path("article-list")
+    suspend fun getAllArticleList(@QueryParam("author") author: String?, @QueryParam("page") page: Int?): TemplateInstance {
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("enabled", true))
-        if(!userId.isNullOrBlank()){
-            filters.add(Filters.eq("userId", userId))
+        if(!author.isNullOrBlank()){
+            filters.add(Filters.eq("author", author))
         }
+
         val totalPage = ceil((articleRepository.count(Filters.and(filters)).toDouble() / PAGE_ENTITY_NUM)).toInt()
 
         return  Templates.articleList(
-            articleRepository.findArticleListViaPage(filters,page?:1),totalPage)
+            articleRepository.getArticleListByUser(author,page?:1),totalPage)
     }
 }

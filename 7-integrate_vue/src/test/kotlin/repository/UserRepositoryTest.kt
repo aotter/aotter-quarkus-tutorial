@@ -59,7 +59,10 @@ class UserRepositoryTest {
                 val roles = mutableSetOf<Role>()
                 roles.add(Role.USER)
                 if(i > 7) roles.add(Role.ADMIN)
-                Uni.createFrom().publisher(collection.insertOne(User("user$i", BcryptUtil.bcryptHash("pwd$i"), roles))).awaitSuspending()
+                Uni.createFrom().publisher(collection.insertOne(User(
+                    username = "user$i",
+                    password = BcryptUtil.bcryptHash("pwd$i"),
+                    roles = roles))).awaitSuspending()
             }
         }
     }

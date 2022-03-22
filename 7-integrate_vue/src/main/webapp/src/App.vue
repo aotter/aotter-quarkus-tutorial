@@ -1,6 +1,6 @@
 <template>
-  <div id="app">  
-    <Header :isLogin="isLogin" @logout="logout"></Header>
+  <div id="app" class="w-100">
+    <Header isLogin="isLogin" @logout="logout"></Header>
     <router-view :isLogin="isLogin"></router-view>
   </div>
 </template>
@@ -41,6 +41,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  /*position: relative;*/
 }
 </style>

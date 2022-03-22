@@ -75,11 +75,14 @@ class ArticleRepository: BaseMongoRepository<Article>() {
         return coroutineUpdate(id, updates)
     }
 
-    suspend fun getArticleListByUser(author: String, page: Int): List<ArticleView> {
-        val result = articleColl.find(
-            Filters.and(
-                Filters.eq("author", author),
-                Filters.eq("enabled", true)))
+    suspend fun getArticleListByUser(author: String?, page: Int): List<ArticleView> {
+        val filters = mutableListOf<Bson>()
+        filters.add(Filters.eq("enabled", true))
+        if(!author.isNullOrBlank()){
+            filters.add(Filters.eq("author", author))
+        }
+
+        val result = articleColl.find(Filters.and(filters))
             .sort(Sorts.descending("lastModifiedTime"))
             .skip((page - 1) * PAGE_ENTITY_NUM)
             .limit(PAGE_ENTITY_NUM)
@@ -109,27 +112,6 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     suspend fun deleteArticle(id: String): Article? {
         val updates = mutableListOf(Updates.set("enabled",false))
         return coroutineUpdate(id, updates)
-    }
-
-    suspend fun findArticleListViaPage(filters: MutableList<Bson>, page: Int): List<ArticleView>{
-        val result = articleColl.find(Filters.and(filters))
-            .sort(Sorts.descending("lastModifiedTime"))
-            .skip((page - 1) * PAGE_ENTITY_NUM)
-            .limit(PAGE_ENTITY_NUM)
-
-        val sdFormat = SimpleDateFormat("yyyy/MM/dd a hh:mm ", Locale.TAIWAN)
-
-        return multiAwait(result).map {
-            ArticleView(
-                id = it["_id"].toString(),
-                category = it["category"] as String,
-                title = it["title"] as String,
-                content = it["content"] as String,
-                author = it["author"] as String,
-                authorName = it["authorName"] as String,
-                lastModifiedTime = sdFormat.format(it["lastModifiedTime"] as Date)
-            )
-        }
     }
 
     private suspend fun <T> uniAwait(publisher: Publisher<T>): T?{
