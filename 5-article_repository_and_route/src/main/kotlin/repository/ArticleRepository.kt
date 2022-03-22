@@ -93,6 +93,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
                 title = it["title"] as String,
                 content = it["content"] as String,
                 author = it["author"] as String,
+                authorName = it["authorName"] as String,
                 lastModifiedTime = sdFormat.format(it["lastModifiedTime"] as Date)
             )
         }
@@ -130,11 +131,11 @@ class ArticleRepository: BaseMongoRepository<Article>() {
 
     data class ArticleView(
         val id: String? = null,
-        val userId: String? = null,
+        val author:String? = null,
+        val authorName: String? = null,
         val category: String? = null,
         val title: String? = null,
         val content: String? = null,
-        val author: String? = null,
         val lastModifiedTime: String? = null,
     )
 }

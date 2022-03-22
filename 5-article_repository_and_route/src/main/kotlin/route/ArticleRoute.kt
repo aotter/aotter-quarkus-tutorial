@@ -5,20 +5,22 @@ import model.po.Article
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
 import repository.ArticleRepository
 import repository.ArticleRepository.ArticleView
+import security.Role
+import javax.annotation.security.RolesAllowed
 import javax.inject.Inject
 import javax.ws.rs.*
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.SecurityContext
 
-
+@Path("/")
 class ArticleRoute: BaseRoute() {
 
     @Inject
     lateinit var articleRepository: ArticleRepository
 
     @POST
-//    @Path("/create")
-    @Path("/article")
+    @Path("article")
+    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun createArticle(
         @Context securityContext: SecurityContext,
         @RequestBody body: Article): Uni<Article?> {
@@ -29,8 +31,8 @@ class ArticleRoute: BaseRoute() {
     }
 
     @GET
-//    @Path("/article-content")
-    @Path("/article")
+    @Path("article")
+    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun getArticleById(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Uni<Article?> {
@@ -41,8 +43,8 @@ class ArticleRoute: BaseRoute() {
     }
 
     @PUT
-//    @Path("/edit-article")
-    @Path("/article")
+    @Path("article")
+    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun editArticle(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String,
@@ -54,8 +56,8 @@ class ArticleRoute: BaseRoute() {
     }
 
     @DELETE
-//    @Path("/delete-article")
-    @Path("/article")
+    @Path("article")
+    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun deleteArticle(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Uni<Article?> {
@@ -66,12 +68,12 @@ class ArticleRoute: BaseRoute() {
     }
 
     @GET
-    @Path("/article-list")
+    @Path("article-list")
+    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun getArticleListByUser(
         @Context securityContext: SecurityContext,
         @QueryParam("page") page: Int?): Uni<List<ArticleView>> {
         val author = securityContext.userPrincipal.name
-        println("author=$author")
         return uni {
             articleRepository.getArticleListByUser(author,page?:1)
         }

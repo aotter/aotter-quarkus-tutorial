@@ -55,16 +55,8 @@ class ArticleRepositoryTest {
 
     @BeforeEach
     fun init(){
-        val pojoCodecRegistry: CodecRegistry = CodecRegistries.fromRegistries(
-            MongoClientSettings.getDefaultCodecRegistry(),
-            CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build()))
-        val settings: MongoClientSettings = MongoClientSettings.builder()
-            .applyConnectionString(ConnectionString(uri))
-            .codecRegistry(pojoCodecRegistry)
-            .build()
-
-        articleColl = MongoClients.create(settings).getDatabase(db).getCollection(articleCol)
-        userColl = MongoClients.create(settings).getDatabase(db).getCollection(userCol)
+        articleColl = MongoClients.create(uri).getDatabase(db).getCollection(articleCol)
+        userColl = MongoClients.create(uri).getDatabase(db).getCollection(userCol)
 
         runBlocking {
             val userDoc = Document().append("username",TestRole.USERNAME)

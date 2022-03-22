@@ -26,4 +26,4 @@
     * 繼承 ClamSetup
     * 使用 [rest-assured](https://github.com/rest-assured/rest-assured/wiki/GettingStarted) 做 API 的測試
     * security 測試額外的設定
-        * 參考：[QUARKUS - SECURITY TESTING](https://quarkus.io/guides/security-testing)    
+        * 參考：[QUARKUS - SECURITY TESTING](https://quarkus.io/guides/security-testing)
