@@ -20,11 +20,12 @@ class ArticleRoute: BaseRoute() {
 
     @POST
     @Path("article")
-    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun createArticle(
         @Context securityContext: SecurityContext,
         @RequestBody body: Article): Uni<Article?> {
-        val author = securityContext.userPrincipal.name
+//        val author = securityContext.userPrincipal.name
+        val author = "6232fe9f9030836ef30f9238"
         return uni {
             articleRepository.createArticle(body, author)
         }
@@ -32,11 +33,12 @@ class ArticleRoute: BaseRoute() {
 
     @GET
     @Path("article")
-    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun getArticleById(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Uni<Article?> {
-        val author = securityContext.userPrincipal.name
+//        val author = securityContext.userPrincipal.name
+        val author = "6232fe9f9030836ef30f9238"
         return uni {
             articleRepository.getArticleById(articleId)
         }
@@ -44,12 +46,13 @@ class ArticleRoute: BaseRoute() {
 
     @PUT
     @Path("article")
-    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun editArticle(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String,
         @RequestBody body: Article): Uni<Article?> {
-        val author = securityContext.userPrincipal.name
+//        val author = securityContext.userPrincipal.name
+        val author = "6232fe9f9030836ef30f9238"
         return uni {
             articleRepository.updateArticle(articleId,body)
         }
@@ -57,11 +60,12 @@ class ArticleRoute: BaseRoute() {
 
     @DELETE
     @Path("article")
-    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun deleteArticle(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Uni<Article?> {
-        val author = securityContext.userPrincipal.name
+//        val author = securityContext.userPrincipal.name
+        val author = "6232fe9f9030836ef30f9238"
         return uni {
             articleRepository.deleteArticle(articleId)
         }
@@ -69,13 +73,19 @@ class ArticleRoute: BaseRoute() {
 
     @GET
     @Path("articles")
-    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     fun getArticleListByUser(
         @Context securityContext: SecurityContext,
         @QueryParam("page") page: Int?): Uni<List<ArticleView>> {
         val author = securityContext.userPrincipal.name
+//        val author = "6232fe9f9030836ef30f9238"
+        val query = if(!author.isNullOrBlank()){
+            mapOf("author" to author)
+        }else{
+            null
+        }
         return uni {
-            articleRepository.getArticleListByUser(author,page?:1)
+            articleRepository.getArticleListByQuery(query,page?:1)
         }
     }
 }

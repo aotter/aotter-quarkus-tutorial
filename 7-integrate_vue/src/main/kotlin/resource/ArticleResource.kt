@@ -55,15 +55,20 @@ class ArticleResource {
     @GET
     @Path("article-list")
     suspend fun getAllArticleList(@QueryParam("author") author: String?, @QueryParam("page") page: Int?): TemplateInstance {
-        val filters = mutableListOf<Bson>()
-        filters.add(Filters.eq("enabled", true))
-        if(!author.isNullOrBlank()){
-            filters.add(Filters.eq("author", author))
+        val query = if(!author.isNullOrBlank()){
+            mapOf("author" to author)
+        }else{
+            null
         }
 
-        val totalPage = ceil((articleRepository.count(Filters.and(filters)).toDouble() / PAGE_ENTITY_NUM)).toInt()
+        val list = articleRepository.getArticleListByQuery(query,page?:1)
 
-        return  Templates.articleList(
-            articleRepository.getArticleListByUser(author,page?:1),totalPage)
+        val totalPage = if(list.isNotEmpty()){
+            list[0].pageLength!!
+        }else{
+            1
+        }
+
+        return  Templates.articleList(list,totalPage)
     }
 }

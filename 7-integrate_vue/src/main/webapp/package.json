@@ -10,9 +10,17 @@
     "prod": "vue-cli-service build --dest ../resources/META-INF/resources"
   },
   "dependencies": {
+    "bootstrap": "^4.6.0",
     "core-js": "^3.6.5",
-    "vue": "^2.6.11",
-    "vue-router": "^3.5.1"
+    "jquery": "^1.12.4",
+    "jquery-ui": "^1.12.1",
+    "blueimp-file-upload": "^10.31.0",
+    "popper.js": "^1.16.1",
+    "postcss": "^8.3.6",
+    "vue": "^3.2.6",
+    "vue-router": "^4.0.0-0",
+    "vue-template-compiler": "^2.6.14",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

@@ -7,19 +7,33 @@
 </head>
 <body>
 <main role="main">
-    <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
-        <h5 class="my-0 mr-md-auto font-weight-normal"><a class="text-dark" style="text-decoration: none" href="/article-list">POST</a></h5>
-        <a class="btn btn-outline-primary mr-2" href="/index.html#/login">Sign in</a>
-        <a class="btn btn-outline-primary ml-1" href="/index.html#/signup">Sign up</a>
-    </div>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/article-list">POST</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/index.html#/back-stage">個人頁</a>
+                    </li>
+                </ul>
+            </div>
+            <a class="btn btn-outline-primary mr-2" href="/index.html#/login">登入</a>
+            <a class="btn btn-outline-primary mr-2" href="/index.html#/signup">註冊</a>
+            <a class="btn btn-outline-primary mr-2" href="#">登出</a>
+        </div>
+    </nav>
+    <div class="album py-5 bg-light mt-5">
+        <div class="container">
+            <div class="blog-post">
+                <h2 class="blog-post-title">{article.title}</h2>
+                <p class="blog-post-meta">{article.lastModifiedTime} by <a href="/article-list?author={article.author}">{article.authorName}</a></p>
 
-    <div class="container">
-        <div class="blog-post">
-            <h2 class="blog-post-title">{article.title}</h2>
-            <p class="blog-post-meta">{article.lastModifiedTime} by <a href="/article-list?author={article.author}">{article.authorName}</a></p>
-
-            <p>{article.content}</p>
-            <hr>
+                <p>{article.content}</p>
+                <hr>
+            </div>
         </div>
     </div>
 </main>

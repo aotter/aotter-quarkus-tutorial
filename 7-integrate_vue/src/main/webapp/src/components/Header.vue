@@ -1,14 +1,24 @@
 <template>
-<!--  <div>-->
-<!--    <router-link to="/signup" v-if="!isLogin">| Signup |</router-link>-->
-<!--    <router-link to="/login" v-if="!isLogin"> Login |</router-link>-->
-<!--    <a href="" @click.prevent="$emit('logout')" v-if="isLogin"> Logout |</a>-->
-<!--  </div>-->
-  <div id="header"  class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
-    <h5 class="my-0 mr-md-auto font-weight-normal"><a class="text-dark" style="text-decoration: none" href="/article-list">POST</a></h5>
-    <a class="btn btn-outline-primary mr-2" href="/index.html#/login">Sign in</a>
-    <a class="btn btn-outline-primary ml-1" href="/index.html#/signup">Sign up</a>
-  </div>
+  <nav class="navbar navbar-expand-md fixed-top navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/article-list">POST</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+          <li class="nav-item">
+            <div class="nav-link active" aria-current="page">
+              <router-link to="/back-stage" style="color: whitesmoke; text-decoration: none">個人頁</router-link>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <a class="btn btn-outline-primary mr-2" v-if="isLogin === false" href="/index.html#/login">登入</a>
+      <a class="btn btn-outline-primary mr-2" href="/index.html#/signup">註冊</a>
+      <a class="btn btn-outline-primary mr-2" v-if="isLogin === true" href="#">登出</a>
+    </div>
+  </nav>
 </template>
 <script>
   export default {

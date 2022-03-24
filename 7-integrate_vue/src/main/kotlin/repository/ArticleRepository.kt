@@ -2,7 +2,6 @@ package repository
 
 import com.mongodb.WriteConcern
 import com.mongodb.client.model.*
-import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.mongodb.reactivestreams.client.MongoDatabase
@@ -75,12 +74,17 @@ class ArticleRepository: BaseMongoRepository<Article>() {
         return coroutineUpdate(id, updates)
     }
 
-    suspend fun getArticleListByUser(author: String?, page: Int): List<ArticleView> {
+    suspend fun getArticleListByQuery(data: Map<String,String>?, page: Int): List<ArticleView> {
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("enabled", true))
-        if(!author.isNullOrBlank()){
-            filters.add(Filters.eq("author", author))
+        if(!data.isNullOrEmpty()){
+            data.forEach { (key, value) ->
+                filters.add(Filters.eq(key,value))
+            }
         }
+        val pageLength = kotlin.math.ceil(
+                multiAwait(articleColl.find(Filters.and(filters))).size.toDouble() / PAGE_ENTITY_NUM
+            ).toInt()
 
         val result = articleColl.find(Filters.and(filters))
             .sort(Sorts.descending("lastModifiedTime"))
@@ -97,7 +101,8 @@ class ArticleRepository: BaseMongoRepository<Article>() {
                 content = it["content"] as String,
                 author = it["author"] as String,
                 authorName = it["authorName"] as String,
-                lastModifiedTime = sdFormat.format(it["lastModifiedTime"] as Date)
+                lastModifiedTime = sdFormat.format(it["lastModifiedTime"] as Date),
+                pageLength = pageLength
             )
         }
     }
@@ -140,5 +145,6 @@ class ArticleRepository: BaseMongoRepository<Article>() {
         val title: String? = null,
         val content: String? = null,
         val lastModifiedTime: String? = null,
+        val pageLength: Int? = 1
     )
 }
