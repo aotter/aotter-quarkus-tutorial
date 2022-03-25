@@ -14,6 +14,9 @@ abstract class BaseMongoEntity<T>(
 
 ): ReactivePanacheMongoEntity() {
 
+    // the followings are example of active record pattern
+    // we can remove them is we want to totally embrace repository pattern here
+
     @Suppress("UNCHECKED_CAST")
     fun <T : ReactivePanacheMongoEntityBase> save(): Uni<T> {
         lastModifiedTime = lastModifiedTime?.let { Instant.now() } ?: createdTime

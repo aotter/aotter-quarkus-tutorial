@@ -75,6 +75,10 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
     </dependency>
     <dependency>
@@ -157,17 +161,24 @@
             <artifactId>kotlin-maven-allopen</artifactId>
             <version>${kotlin.version}</version>
           </dependency>
+          <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-noarg</artifactId>
+            <version>${kotlin.version}</version>
+          </dependency>
         </dependencies>
         <configuration>
           <javaParameters>true</javaParameters>
           <jvmTarget>1.8</jvmTarget>
           <compilerPlugins>
             <plugin>all-open</plugin>
+            <plugin>no-arg</plugin>
           </compilerPlugins>
           <pluginOptions>
             <option>all-open:annotation=javax.ws.rs.Path</option>
             <option>all-open:annotation=javax.enterprise.context.ApplicationScoped</option>
             <option>all-open:annotation=io.quarkus.test.junit.QuarkusTest</option>
+            <option>no-arg:annotation=io.quarkus.mongodb.panache.common.MongoEntity</option>
           </pluginOptions>
         </configuration>
       </plugin>
