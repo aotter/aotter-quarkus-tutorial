@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.smallrye.mutiny.Uni
 import model.po.User
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
+import repository.UserRepository
 import security.Role
 import javax.annotation.security.RolesAllowed
+import javax.inject.Inject
 import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Path
@@ -21,6 +23,7 @@ class UserRoute: BaseRoute() {
             @JsonProperty("username") var username: String,
             @JsonProperty("password") var password: String
     )
+
     @Path("signUp")
     @POST
     fun signUp(@RequestBody body: SignUpRequest): Uni<User>{

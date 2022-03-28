@@ -45,7 +45,9 @@
                     <div class="col-md-6">
                     <div class="card flex-md-row mb-4 shadow-sm h-md-250">
                     <div class="card-body d-flex flex-column align-items-start" style="position: relative;">
-                    <strong class="d-inline-block mb-2 text-primary">{resource.category}</strong>
+                    <strong class="d-inline-block mb-2 text-primary">
+                        <a href="/article-list?category={resource.category}">{resource.category}</a>
+                    </strong>
                     <h3 class="mb-0">
                         <a class="text-dark" href="/article-content?articleId={resource.id}">{resource.title}</a>
                     </h3>

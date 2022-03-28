@@ -1,91 +1,81 @@
-package route
-
-import io.smallrye.mutiny.Uni
-import model.po.Article
-import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
-import repository.ArticleRepository
-import repository.ArticleRepository.ArticleView
-import security.Role
-import javax.annotation.security.RolesAllowed
-import javax.inject.Inject
-import javax.ws.rs.*
-import javax.ws.rs.core.Context
-import javax.ws.rs.core.SecurityContext
-
-@Path("/")
-class ArticleRoute: BaseRoute() {
-
-    @Inject
-    lateinit var articleRepository: ArticleRepository
-
-    @POST
-    @Path("article")
+//package route
+//
+//import  io.smallrye.mutiny.Uni
+//import model.po.Article
+//import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
+//import repository.ArticleRepository
+//import repository.ArticleRepository.ArticleView
+//import security.Role
+//import javax.annotation.security.RolesAllowed
+//import javax.inject.Inject
+//import javax.ws.rs.*
+//import javax.ws.rs.core.Context
+//import javax.ws.rs.core.SecurityContext
+//
+//@Path("/")
+//class ArticleRoute: BaseRoute() {
+//
+//    @Inject
+//    lateinit var articleRepository: ArticleRepository
+//
+//    @POST
+//    @Path("article")
 //    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
-    fun createArticle(
-        @Context securityContext: SecurityContext,
-        @RequestBody body: Article): Uni<Article?> {
+//    fun createArticle(
+//        @Context securityContext: SecurityContext,
+//        @RequestBody body: Article): Uni<Article?> {
 //        val author = securityContext.userPrincipal.name
-        val author = "6232fe9f9030836ef30f9238"
-        return uni {
-            articleRepository.createArticle(body, author)
-        }
-    }
-
-    @GET
-    @Path("article")
+//        return uni {
+//            articleRepository.createArticle(body, author)
+//        }
+//    }
+//
+//    @GET
+//    @Path("article")
 //    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
-    fun getArticleById(
-        @Context securityContext: SecurityContext,
-        @QueryParam("articleId") articleId: String): Uni<Article?> {
+//    fun getArticleById(
+//        @QueryParam("articleId") articleId: String): Uni<Article?> {
+//        return uni {
+//            articleRepository.getArticleById(articleId)
+//        }
+//    }
+//
+//    @PUT
+//    @Path("article")
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    fun editArticle(
+//        @QueryParam("articleId") articleId: String,
+//        @RequestBody body: Article): Uni<Article?> {
+//        return uni {
+//            articleRepository.updateArticle(articleId,body)
+//        }
+//    }
+//
+//    @DELETE
+//    @Path("article")
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    fun deleteArticle(
+//        @QueryParam("articleId") articleId: String): Uni<Article?> {
+//        return uni {
+//            articleRepository.deleteArticle(articleId)
+//        }
+//    }
+//
+//    @GET
+//    @Path("articles")
+//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
+//    fun getArticleListByUser(
+//        @Context securityContext: SecurityContext,
+//        @QueryParam("page") page: Int?): Uni<List<ArticleView>> {
 //        val author = securityContext.userPrincipal.name
-        val author = "6232fe9f9030836ef30f9238"
-        return uni {
-            articleRepository.getArticleById(articleId)
-        }
-    }
-
-    @PUT
-    @Path("article")
-//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
-    fun editArticle(
-        @Context securityContext: SecurityContext,
-        @QueryParam("articleId") articleId: String,
-        @RequestBody body: Article): Uni<Article?> {
-//        val author = securityContext.userPrincipal.name
-        val author = "6232fe9f9030836ef30f9238"
-        return uni {
-            articleRepository.updateArticle(articleId,body)
-        }
-    }
-
-    @DELETE
-    @Path("article")
-//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
-    fun deleteArticle(
-        @Context securityContext: SecurityContext,
-        @QueryParam("articleId") articleId: String): Uni<Article?> {
-//        val author = securityContext.userPrincipal.name
-        val author = "6232fe9f9030836ef30f9238"
-        return uni {
-            articleRepository.deleteArticle(articleId)
-        }
-    }
-
-    @GET
-    @Path("articles")
-//    @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
-    fun getArticleListByUser(
-        @Context securityContext: SecurityContext,
-        @QueryParam("page") page: Int?): Uni<List<ArticleView>> {
-        val author = securityContext.userPrincipal.name
-//        val author = "6232fe9f9030836ef30f9238"
-        val query = if(!author.isNullOrBlank()){
-            mapOf("author" to author)
-        }else{
-            null
-        }
-        return uni {
-            articleRepository.getArticleListByQuery(query,page?:1)
-        }
-    }
-}
+//        val query = if(!author.isNullOrBlank()){
+//            mapOf("author" to author)
+//        }else{
+//            null
+//        }
+//        println("author=$author")
+//        return uni {
+//            articleRepository.getArticleListByQuery(query,page?:1)
+//        }
+//    }
+//}

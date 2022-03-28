@@ -21,7 +21,6 @@ abstract class BaseMongoEntity<T>(
             .map { this as T }
     }
 
-
     suspend fun <T : ReactivePanacheMongoEntityBase> coroutineSave(): T {
         return save<T>().awaitSuspending()
     }

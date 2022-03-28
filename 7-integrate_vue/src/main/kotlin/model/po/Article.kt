@@ -1,75 +1,57 @@
 package model.po
 
+import io.quarkus.mongodb.panache.common.MongoEntity
+import model.dto.ArticleReq
 import org.bson.Document
 import org.bson.types.ObjectId
 import java.time.Instant
 import java.util.*
 
-class Article: Document(){
+@MongoEntity
+data class Article(
+    /**
+     *  使用者（作者） UserId
+     */
+    var author: ObjectId,
 
-    var id: ObjectId? = null
+    /**
+     *  使用者名稱
+     */
+    var authorName: String,
 
-    var author: String? = null
-        set(value) {
-            field = value
-            put(Article::author.name, value)
-        }
+    /**
+     *  文章分類
+     */
+    var category: String,
 
-    var authorName: String? = null
-        set(value) {
-            field = value
-            put(Article::authorName.name, value)
-        }
+    /**
+     *  文章標題
+     */
+    var title: String,
 
-    var category: String? = null
-        set(value) {
-            field = value
-            put(Article::category.name, value)
-        }
-    var title: String? = null
-        set(value) {
-            field = value
-            put(Article::title.name, value)
-        }
-    var content: String? = null
-        set(value) {
-            field = value
-            put(Article::content.name, value)
-        }
-    var enabled: Boolean? = true
-        set(value) {
-            field = value
-            put(Article::enabled.name, value)
-        }
+    /**
+     *  文章內容
+     */
+    var content: String,
 
-    var createdTime: Instant? = null
-        set(value) {
-            field = value
-            put(Article::createdTime.name, value)
-        }
+    /**
+     *  是否已發佈
+     */
+    var published: Boolean = false,
 
-    var lastModifiedTime: Instant? = null
-        set(value) {
-            field = value
-            put(Article::lastModifiedTime.name, value)
-        }
 
-    companion object {
-        fun documentToArticle(document: Document): Article{
-            val article = Article()
-            article.author = document.getString(Article::author.name)
-            article.authorName = document.getString(Article::authorName.name)
-            article.category = document.getString(Article::category.name)
-            article.title = document.getString(Article::title.name)
-            article.content = document.getString(Article::content.name)
-            article.enabled = document.getBoolean(Article::enabled.name)
-            article.createdTime = dateToInstant(document.getDate(Article::createdTime.name))
-            article.lastModifiedTime = dateToInstant(document.getDate(Article::lastModifiedTime.name))
-            return article
-        }
+    /**
+     *  是否已刪除
+     */
+    var visible: Boolean = true
 
-        private fun dateToInstant(date: Date?): Instant?{
-            return date?.toInstant()
-        }
-    }
+): BaseMongoEntity<Article>(){
+
+    constructor(author: User, req: ArticleReq) : this(
+        author = author.id!!,
+        authorName = author.username!!,
+        category = req.category!!,
+        title = req.title!!,
+        content = req.content?:""
+    )
 }
