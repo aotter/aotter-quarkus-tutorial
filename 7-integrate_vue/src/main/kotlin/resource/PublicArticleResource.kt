@@ -38,8 +38,6 @@ class PublicArticleResource {
         external fun articleList(): TemplateInstance
     }
 
-    val PAGE_ENTITY_NUM = 10
-
     /**
      * get TemplateInstance with path(start in resources/templates/)
      */
@@ -87,13 +85,7 @@ class PublicArticleResource {
                 else -> articleRepository.findPublished(null,null,page?:1)
             }
 
-
-            val totalArticlesNum = articleRepository.count(Filters.and(filters))
-            val totalPage = if(totalArticlesNum > PAGE_ENTITY_NUM){
-                ceil(totalArticlesNum.toDouble() / PAGE_ENTITY_NUM).toInt()
-            }else{
-                1
-            }
+            val totalPage = articleRepository.getPageLength(filters)
 
             val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
                 .withLocale(Locale.TAIWAN)
@@ -102,11 +94,11 @@ class PublicArticleResource {
             val articleList = list.map {
                 ArticleView(
                     id = it.id.toString(),
+                    author = it.author.toString(),
+                    authorName = it.authorName,
                     category = it.category,
                     title = it.title,
                     content = it.content,
-                    author = it.author.toString(),
-                    authorName = it.authorName,
                     lastModifiedTime = formatter.format(it.lastModifiedTime),
                 )
             }

@@ -1,5 +1,5 @@
 <template>
-  <div class="container" style="margin-top: 150px">
+  <div class="container" style="margin-top: 350px">
     <div class="py-5 bg-light mt-5">
 
       <div class="title d-flex">文章列表</div>
@@ -22,9 +22,9 @@
       <thead class="table-secondary" >
       <tr>
         <th scope="col" width="40%">文章名稱</th>
-        <th scope="col" width="20%">文章類別</th>
+        <th scope="col" width="15%">文章類別</th>
         <th scope="col" width="20%">最後更新日期</th>
-        <th scope="col" width="20%"></th>
+        <th scope="col" width="25%"></th>
       </tr>
       </thead>
       <tbody>
@@ -35,12 +35,14 @@
           </a>
         </th>
         <td>{{article.category}}</td>
-        <td>{{article.lastModifiedTime}}</td>
+        <td>{{ article.lastModifiedTime}}</td>
         <td class="d-flex flex-wrap">
         <span class="my-1">
           <button class="btn btn-warning mr-2">
             <router-link :to="'/article-edit?articleId='+article.id" style="color: whitesmoke; text-decoration: none">編輯</router-link>
           </button>
+          <button :id="'publishedBtn'+index" class="btn btn-info mr-2" @click="updatePublishStatus(article.id,index,!article.published)">
+            {{article.published?'取消發佈': '發佈'}}</button>
           <button class="btn btn-danger" @click="deleteArticle(article.id,index)">刪除</button>
         </span>
         </td>
@@ -57,7 +59,7 @@
           </a>
         </li>
         <li class="page-item" v-for="page in pageLength" :key="page">
-          <a class="page-link" href="#" @click="changePage(page)">{{page}}</a>
+          <span class="page-link" @click="changePage(page)">{{page}}</span>
         </li>
         <li class="page-item" :class="{'disabled':currentPage == pageLength}">
           <a class="page-link" @click="nextPage(pageLength)" aria-label="Next" :disabled="currentPage == pageLength">
@@ -72,6 +74,8 @@
 </template>
 
 <script>
+import moment from 'moment';
+
 export default {
   name: "BackStage",
   data () {
@@ -89,15 +93,23 @@ export default {
   computed:{
     pageLength(){
       return this.articleList.length != 0 ? parseInt( this.articleList[0].pageLength) : 1
-    }
+    },
   },
   created() {
     this.getArticleList(1)
   },
+  filters: {
+    dateConvert: function (value){
+      console.log("dateConvert value=",value)
+
+      if (!value) return ''
+      return moment(String(value)).format('YYYY/MM/DD hh:mm a')
+    }
+  },
   methods:{
     getArticleList:function (page){
       this.articleList = []
-      let url = `/articles?page=${page}`
+      let url = `/api/admin/articles?page=${page}`
       fetch(url)
           .then(res => {
             if (res.ok) {
@@ -109,23 +121,41 @@ export default {
             this.articleList = list
           })
     },
+    updatePublishStatus: function(articleId,index,published){
+      console.log("index=",index)
+      let url = `/api/admin/update-publish-status?articleId=${articleId}&published=${published}`
+      fetch(url, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json', 'Content-Type': 'application/json'
+        }
+      }).then(res => {
+        if (res.ok) {
+          return res.json()
+        }
+      }).then(result => {
+        console.log("result=",result)
+        let id = 'publishedBtn' + index
+        var text = document.getElementById(id).firstChild;
+        text.data = text.data == "取消發佈" ? "發佈" : "取消發佈";
+      })
+    },
     deleteArticle: function(articleId,index){
-      let url = `/article?articleId=${articleId}`
+      let url = `/api/admin/article?articleId=${articleId}`
       fetch(url, {
         method: 'DELETE',
         headers: {
           Accept: 'application/json', 'Content-Type': 'application/json'
         }
       }).then(res => {
-            if (res.ok) {
-              return res.json()
-            }
-          })
-          .then(result => {
-            console.log("result=",result)
-            // this.pageLength = list.length != 0 ? parseInt(list[0].pageLength) : 1
-            this.articleList.splice(index,1)
-          })
+        if (res.ok) {
+          return res.json()
+        }
+      }).then(result => {
+        console.log("result=",result)
+        // this.pageLength = list.length != 0 ? parseInt(list[0].pageLength) : 1
+        this.articleList.splice(index,1)
+      })
     },
     // query:function(){
     //   let url = Const.bgDomain + '/material-query?subject=' + this.$route.query.subject
@@ -145,7 +175,7 @@ export default {
     // },
     changePage: function (page){
       this.currentPage = page
-      this.getArticleList(page)
+      this.getArticleList(this.currentPage)
     },
     previousPage: function (){
       if(this.currentPage !== 1){

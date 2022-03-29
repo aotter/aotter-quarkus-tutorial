@@ -22,7 +22,7 @@
     <button class="btn btn-lg btn-primary btn-block ml-4" style="width: 85%;" @click="signUp">註冊</button>
 
     <button class="btn btn-lg btn-primary btn-block ml-4 mt-4" style="width: 85%;">
-      <router-link to="/login" style="color: white; text-decoration: none; ">登入</router-link>
+      <a href="/rest/login" style="color: white; text-decoration: none; ">登入</a>
     </button>
   </div>
 </template>
@@ -48,7 +48,7 @@ export default {
             return
           }
             const {username, password} = this
-            fetch('/rest/signUp',{
+            fetch('/api/rest/user/signUp',{
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({username, password})

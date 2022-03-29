@@ -29,6 +29,7 @@ export default {
   mounted(){
     if(document.cookie.indexOf('quarkus-credential') !== -1){
       this.isLogin = true
+      this.$router.push('/index#/')
     }
   }
 }

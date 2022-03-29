@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 //@ExperimentalCoroutinesApi
 @OptIn(ExperimentalCoroutinesApi::class)
-abstract class BaseMongoRepository<Entity : Any>: ReactivePanacheMongoRepository<Entity> {
+abstract class BaseMongoRepository<Entity : Any> : ReactivePanacheMongoRepository<Entity> {
 
     @Inject
     lateinit var logger: Logger

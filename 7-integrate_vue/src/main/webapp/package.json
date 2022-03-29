@@ -6,15 +6,16 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "watch": "vue-cli-service build --mode=development --watch --dest ../resources/META-INF/resources",
-    "prod": "vue-cli-service build --dest ../resources/META-INF/resources"
+    "watch": "vue-cli-service build --mode=development --watch",
+    "prod": "vue-cli-service build"
   },
   "dependencies": {
+    "blueimp-file-upload": "^10.31.0",
     "bootstrap": "^4.6.0",
     "core-js": "^3.6.5",
     "jquery": "^1.12.4",
     "jquery-ui": "^1.12.1",
-    "blueimp-file-upload": "^10.31.0",
+    "moment": "^2.29.1",
     "popper.js": "^1.16.1",
     "postcss": "^8.3.6",
     "vue": "^3.2.6",

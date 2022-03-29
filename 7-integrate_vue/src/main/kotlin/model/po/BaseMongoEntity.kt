@@ -14,14 +14,14 @@ abstract class BaseMongoEntity<T>(
 
 ): ReactivePanacheMongoEntity() {
 
-    @Suppress("UNCHECKED_CAST")
-    fun <T : ReactivePanacheMongoEntityBase> save(): Uni<T> {
-        lastModifiedTime = lastModifiedTime?.let { Instant.now() } ?: createdTime
-        return persistOrUpdate<T>()
-            .map { this as T }
-    }
-
-    suspend fun <T : ReactivePanacheMongoEntityBase> coroutineSave(): T {
-        return save<T>().awaitSuspending()
-    }
+//    @Suppress("UNCHECKED_CAST")
+//    fun <T : ReactivePanacheMongoEntityBase> save(): Uni<T> {
+//        lastModifiedTime = lastModifiedTime?.let { Instant.now() } ?: createdTime
+//        return persistOrUpdate<T>()
+//            .map { this as T }
+//    }
+//
+//    suspend fun <T : ReactivePanacheMongoEntityBase> coroutineSave(): T {
+//        return save<T>().awaitSuspending()
+//    }
 }

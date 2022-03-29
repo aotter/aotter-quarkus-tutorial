@@ -10,7 +10,7 @@
                class="form-control" placeholder="帳號" required autofocus>
       </div>
       <label for="inputPassword" class="sr-only">密碼</label>
-      <input type="text" id="inputPassword" name="j_password" class="form-control mb-3 ml-4" style="width: 85%;" placeholder="密碼" required>
+      <input type="password" id="inputPassword" name="j_password" class="form-control mb-3 ml-4" style="width: 85%;" placeholder="密碼" required>
       <button class="btn btn-lg btn-primary btn-block ml-4" style="width: 85%;">登入</button>
     </form>
 

@@ -33,7 +33,7 @@
 
         <hr class="mb-4">
         <button v-if="articleId" class="btn btn-primary btn-lg btn-block" @click="updateArticle" >更新文章</button>
-        <button v-else class="btn btn-primary btn-lg btn-block" @click="postArticle" >發布文章</button>
+        <button v-else class="btn btn-primary btn-lg btn-block" @click="postArticle" >儲存文章</button>
       </div>
     </div>
   </div>
@@ -58,7 +58,7 @@ export default {
   },
   mounted() {
     if(typeof this.articleId !== 'undefined'){
-      let url = `/article?articleId=${this.articleId}`
+      let url = `/api/admin/article?articleId=${this.articleId}`
       fetch(url)
           .then(res => {
             if (res.ok) {
@@ -75,7 +75,7 @@ export default {
   methods: {
     postArticle(){
       if(this.checkContent()) {
-        fetch('/article', {
+        fetch('/api/admin/article', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(this.article)
@@ -88,7 +88,7 @@ export default {
     },
     updateArticle(){
       if(this.checkContent()){
-        fetch(`/article?articleId=${this.articleId}`,{
+        fetch(`/api/admin/article?articleId=${this.articleId}`,{
           method: 'PUT',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify(this.article)

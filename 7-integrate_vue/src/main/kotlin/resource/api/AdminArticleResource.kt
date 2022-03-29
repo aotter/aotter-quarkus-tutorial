@@ -4,12 +4,11 @@ import com.mongodb.client.model.Filters
 import io.quarkus.security.identity.SecurityIdentity
 import model.dto.ArticleReq
 import model.po.Article
-import model.po.User
 import org.bson.types.ObjectId
 import org.jboss.logging.Logger
 import repository.ArticleRepository
+import repository.ArticleRepository.ArticleView
 import repository.UserRepository
-import route.BaseRoute
 import security.Role
 import javax.annotation.security.RolesAllowed
 import javax.inject.Inject
@@ -23,7 +22,7 @@ import javax.ws.rs.core.SecurityContext
 @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("api/admin/article")
+@Path("api/admin")
 class AdminArticleResource {
 
     @Inject
@@ -39,6 +38,7 @@ class AdminArticleResource {
     lateinit var identity: SecurityIdentity
 
     @POST
+    @Path("article")
     suspend fun create(
         @Context securityContext: SecurityContext,
         @Valid req: ArticleReq): Article {
@@ -53,10 +53,11 @@ class AdminArticleResource {
     }
 
     @GET
+    @Path("article")
     suspend fun getArticleById(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Article {
-        val result = articleRepository.findOne(Filters.eq("_id",articleId))
+        val result = articleRepository.findOne(Filters.eq("_id",ObjectId(articleId)))
         if(result!= null){
             return result
         }else{
@@ -65,6 +66,7 @@ class AdminArticleResource {
     }
 
     @PUT
+    @Path("article")
     suspend fun update(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String,
@@ -77,7 +79,22 @@ class AdminArticleResource {
         }
     }
 
+    @PUT
+    @Path("update-publish-status")
+    suspend fun publish(
+        @Context securityContext: SecurityContext,
+        @QueryParam("articleId") articleId: String,
+        @QueryParam("published") published: Boolean): Article {
+        val result = articleRepository.updatePublishStatus(ObjectId(articleId),published)
+        if(result!= null){
+            return result
+        }else{
+            throw Exception("article publish fail")
+        }
+    }
+
     @DELETE
+    @Path("article")
     suspend fun delete(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String): Article {
@@ -89,13 +106,15 @@ class AdminArticleResource {
         }
     }
 
+    @GET
     @Path("articles")
     suspend fun getArticleListByUser(
         @Context securityContext: SecurityContext,
-        @QueryParam("page") page: Int?): List<Article> {
+        @QueryParam("page") page: Int?): List<ArticleView> {
         val userName = securityContext.userPrincipal.name
         val id = userRepository.findByUsername(userName)?.id
-        return articleRepository.findPublished(id,null,page?:1)
+        val list = articleRepository.find(id,null,null,page?:1)
+        return articleRepository.convertToArticleView(id,null,null, list)
     }
 
 }
