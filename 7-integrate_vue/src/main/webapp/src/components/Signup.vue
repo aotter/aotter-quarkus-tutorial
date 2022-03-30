@@ -3,7 +3,7 @@
     <img src="../assets/social-media.png" style="width: 80%; height: 80%">
     <h1 class="h3 mb-3 font-weight-normal">建立帳號</h1>
 
-    <div class="input-group ml-4"
+    <div class="input-group ml-4" style="width: 85%; margin: auto"
          :class="isAvailableUserName == false ?'' : 'mb-4'"
          :style="isAvailableUserName == null?'width: 85%':''">
       <label for="inputUserName" class="sr-only">使用者名稱</label>
@@ -17,11 +17,11 @@
     </div>
     <div v-if="isAvailableUserName == false" style="color: red;"> {{ errMsg }}</div>
     <label for="inputPassword" class="sr-only">密碼</label>
-    <input type="text" v-model="password" id="inputPassword" class="form-control mb-3 ml-4" style="width: 85%;" placeholder="密碼" required>
+    <input type="text" v-model="password" id="inputPassword" class="form-control mb-3 ml-4" style="width: 85%; margin: auto" placeholder="密碼" required>
 
-    <button class="btn btn-lg btn-primary btn-block ml-4" style="width: 85%;" @click="signUp">註冊</button>
+    <button class="btn btn-lg btn-primary btn-block ml-4" style="width: 85%; margin: auto" @click="signUp">註冊</button>
 
-    <button class="btn btn-lg btn-primary btn-block ml-4 mt-4" style="width: 85%;">
+    <button class="btn btn-lg btn-primary btn-block ml-4 mt-4" style="width: 85%; margin: auto">
       <a href="/rest/login" style="color: white; text-decoration: none; ">登入</a>
     </button>
   </div>

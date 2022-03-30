@@ -6,9 +6,9 @@ import io.quarkus.panache.common.Page
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import model.dto.ArticleReq
 import model.po.Article
+import model.vo.ArticleListResponse
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -39,11 +39,11 @@ class ArticleRepository: BaseMongoRepository<Article>() {
         )
     }
 
-    val PAGE_ENTITY_NUM = 10
-
+    //TODO add publishedTime and different published Status
     /**
-     * publish article by id
+     * update article published status by id
      * @param id [ObjectId] of the article
+     * @param published [Boolean] of the article
      */
     suspend fun updatePublishStatus(id: ObjectId, published: Boolean): Article? {
         return col.findOneAndUpdate(
@@ -59,7 +59,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     /**
      * update article by id
      * @param id [ObjectId] of the article
-     * @Req data[ArticleReq] of the article
+     * @param data [ArticleReq] of the article
      */
     suspend fun update(id: ObjectId, data: ArticleReq): Article? {
         return col.findOneAndUpdate(
@@ -75,7 +75,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     }
 
     /**
-     * update article by id
+     * delete article by id
      * @param id [ObjectId] of the article
      */
     suspend fun delete(id: ObjectId): Article? {
@@ -95,7 +95,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
      * @param page
      * @param limit
      */
-    suspend fun findPublished(authorId: ObjectId?, category: String?, page: Int = 1, limit: Int = PAGE_ENTITY_NUM) =
+    suspend fun findPublished(authorId: ObjectId?, category: String?, page: Int = 1, limit: Int) =
         find(authorId, category, true, page, limit)
 
 
@@ -106,7 +106,7 @@ class ArticleRepository: BaseMongoRepository<Article>() {
      * @param page
      * @param show
      */
-    suspend fun find(authorId: ObjectId?, category: String?, published: Boolean?, page: Int = 1, show: Int = PAGE_ENTITY_NUM): List<Article> {
+    suspend fun find(authorId: ObjectId?, category: String?, published: Boolean?, page: Int = 1, show: Int): List<Article> {
 
         // reuse Page for logic check
         val checkedPage = Page.of(page - 1 , show)
@@ -133,62 +133,27 @@ class ArticleRepository: BaseMongoRepository<Article>() {
         return find.collect().asList().awaitSuspending()
     }
 
-    suspend fun convertToArticleView(authorId: ObjectId?, category: String?, published: Boolean?, list: List<Article>, ): List<ArticleView>{
-
-        val filters = listOfNotNull(
-            published?.let { Filters.eq(Article::published.name, it) },
-            authorId?.let { Filters.eq(Article::author.name, it) },
-            category?.let { Filters.eq(Article::category.name, it) },
-            Filters.eq("visible", true)
-        )
-        var totalPage = 1
-        if (filters.size > 1) {
-            Filters.and(filters)
-            totalPage = getPageLength(filters.toMutableList())
-        }
-
-        val articleViewList = mutableListOf<ArticleView>()
-
+    //TODO move to service
+    fun  convertToArticleReqList(pageLength: Int?, list: List<Article>, ): List<ArticleListResponse>{
         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
             .withLocale(Locale.TAIWAN)
             .withZone(ZoneId.systemDefault())
 
-        list.forEach { article ->
-            val articleView = ArticleView(
-                id = article.id.toString(),
-                author = article.author.toString(),
-                authorName = article.authorName,
-                category = article.category,
-                title = article.title,
-                content = article.content,
-                published = article.published,
-                lastModifiedTime = formatter.format(article.lastModifiedTime),
-                pageLength = totalPage
+        return list.map {
+            ArticleListResponse(
+                id = it.id.toString(),
+                authorName = it.authorName,
+                category = it.category,
+                title = it.title,
+                published = it.published,
+                lastModifiedTime = formatter.format(it.lastModifiedTime),
+                pageLength = pageLength
             )
-            articleViewList.add(articleView)
         }
-
-        return articleViewList
     }
 
-    suspend fun getPageLength(filters: MutableList<Bson>): Int{
+    suspend fun getPageLength(filters: List<Bson>): Int{
         val totalArticlesNum = count(Filters.and(filters))
-        return if(totalArticlesNum > PAGE_ENTITY_NUM){
-            ceil(totalArticlesNum.toDouble() / PAGE_ENTITY_NUM).toInt()
-        }else{
-            1
-        }
+        return ceil(totalArticlesNum.toDouble() / 10).toInt()
     }
-
-    data class ArticleView(
-        val id: String? = null,
-        val author:String? = null,
-        val authorName:String? = null,
-        val category: String? = null,
-        val title: String? = null,
-        val content: String? = null,
-        val lastModifiedTime: String? = null,
-        val published: Boolean?= null,
-        val pageLength: Int? = 1
-    )
 }

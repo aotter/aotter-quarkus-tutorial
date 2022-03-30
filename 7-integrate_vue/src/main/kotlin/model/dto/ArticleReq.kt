@@ -1,9 +1,7 @@
 package model.dto
-import util.annotation.NoArg
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 
-//@NoArg
 data class ArticleReq (
 
     @field:[
@@ -18,9 +16,14 @@ data class ArticleReq (
     ]
     var title: String? = null,
 
-    //test remove noarg
     @field:[
     NotNull(message = "content may not be null")
     ]
-    var content: String? = null
+    var content: String? = null,
+
+    var author: String? = null,
+
+    var authorName: String? = null,
+
+    var lastModifiedTime: String? = null
 )

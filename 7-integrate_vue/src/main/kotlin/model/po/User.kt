@@ -14,18 +14,9 @@ data class User(
     @JsonIgnore
     var password: String? = null,
 
-    var roles: MutableSet<Role>? = mutableSetOf(Role.USER)
+    var roles: MutableSet<Role>? = mutableSetOf(Role.USER),
+    var role: Role? = Role.USER
 ) : BaseMongoEntity<User>() {
-
-//    companion object {
-//        suspend fun create(username: String, password: String, roles: MutableSet<Role>): User =
-//            User(username.trim().toLowerCase(),BcryptUtil.bcryptHash(password),roles).coroutineSave()
-//    }
-//
-//    suspend fun updateRole(roles: MutableSet<Role>): User = this.apply { this.roles = roles }.coroutineSave()
-//
-//    suspend fun updatePassword(password: String): User =
-//            this.apply { this.password = BcryptUtil.bcryptHash(password) }.coroutineSave()
 
     fun verifyPassword(passwordToVerify: CharArray): Boolean = runCatching {
         val factory = PasswordFactory.getInstance(BCryptPassword.ALGORITHM_BCRYPT)

@@ -54,16 +54,58 @@ class UserRepositoryTest {
 
         collection = MongoClients.create(settings).getDatabase(db).getCollection(COLLECTION_NAME, User::class.java)
 
+
         runBlocking {
             for(i in 1 .. totalCount){
                 val roles = mutableSetOf<Role>()
                 roles.add(Role.USER)
                 if(i > 7) roles.add(Role.ADMIN)
-                Uni.createFrom().publisher(collection.insertOne(User(
-                    username = "user$i",
-                    password = BcryptUtil.bcryptHash("pwd$i"),
-                    roles = roles))).awaitSuspending()
+                userRepo.create("user$i", BcryptUtil.bcryptHash("pwd$i"), roles)
+//                Uni.createFrom().publisher(collection.insertOne(User("user$i", BcryptUtil.bcryptHash("pwd$i"), roles))).awaitSuspending()
             }
+        }
+    }
+
+    @Test
+    fun `create user`(){
+        val TEST_USER_NAME_C = "test_user_c"
+        val TEST_PASSWORD_C = "test_password_c"
+        val TEST_ROLES = mutableSetOf(Role.USER)
+
+        runBlocking {
+            val beforeCount = userRepo.count(Filters.exists(User::username.name))
+            val insertUser = userRepo.create(TEST_USER_NAME_C, TEST_PASSWORD_C, TEST_ROLES)
+            val afterCount = userRepo.count(Filters.exists(User::username.name))
+            Assertions.assertEquals(afterCount, beforeCount + 1 )
+            Assertions.assertEquals(TEST_USER_NAME_C, insertUser.username)
+            Assertions.assertEquals(TEST_ROLES, insertUser.roles)
+            `verify user password`(TEST_PASSWORD_C, insertUser)
+        }
+    }
+
+    fun `verify user password`(expectedPassword: String, user: User?){
+        val result = user?.verifyPassword(expectedPassword.toCharArray())
+        Assertions.assertTrue(result ?: false)
+    }
+
+    @Test
+    fun `update user role`(){
+        runBlocking {
+            val newRole = mutableSetOf(Role.USER, Role.ADMIN)
+            val user =  userRepo.findByUsername("user1")!!
+            val updatedUser = userRepo.updateRole(user, newRole)
+            Assertions.assertEquals(newRole, updatedUser.roles)
+        }
+    }
+
+    @Test
+    fun `update user password`(){
+        runBlocking {
+            val newPassword = "new_password"
+            val user =  userRepo.findByUsername("user1")!!
+            val updateUser = userRepo.updatePassword(user, newPassword)
+            val result = updateUser.verifyPassword(newPassword.toCharArray())
+            Assertions.assertTrue(result ?: false)
         }
     }
 

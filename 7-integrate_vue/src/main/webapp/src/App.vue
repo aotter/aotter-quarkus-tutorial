@@ -1,7 +1,9 @@
 <template>
-  <div class="w-100">
+  <div class="container-fluid w-100">
     <Header :isLogin="isLogin" @logout="logout"></Header>
-    <router-view :isLogin="isLogin"></router-view>
+    <div class="overflow-auto" style="height: calc(100vh - 56px); margin-top: 56px;">
+      <router-view :isLogin="isLogin"></router-view>
+    </div>
   </div>
 </template>
 
@@ -22,14 +24,19 @@ export default {
         fetch('/rest/logout')
         .then(res => {
             if(res.ok) this.isLogin = false
-            this.$router.push('/login');
+            // this.$router.push('/login');
+            location.href = "/rest/login"
         })
     },
   },
   mounted(){
     if(document.cookie.indexOf('quarkus-credential') !== -1){
       this.isLogin = true
-      this.$router.push('/index#/')
+      // this.$router.push('/')
+    } else {
+      if(!["/","/index"].includes(this.$route.path)){
+        location.href = "/rest/login"
+      }
     }
   }
 }

@@ -26,7 +26,7 @@ class UserRepository : BaseMongoRepository<User>() {
      *
      * @param username email format username
      * @param password password
-     * @param role  user role
+     * @param role user role
      */
     suspend fun create(username: String, password: String, roles: MutableSet<Role>): User =
         save(User(username = username.trim().toLowerCase(), password = BcryptUtil.bcryptHash(password), roles = roles))

@@ -29,6 +29,6 @@ class VueResource {
     }
 
     @GET
-    @Path("index.html")
+    @Path("index")
     fun index(): TemplateInstance = Templates.index()
 }

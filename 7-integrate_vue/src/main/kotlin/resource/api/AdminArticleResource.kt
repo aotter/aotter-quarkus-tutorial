@@ -4,10 +4,10 @@ import com.mongodb.client.model.Filters
 import io.quarkus.security.identity.SecurityIdentity
 import model.dto.ArticleReq
 import model.po.Article
+import model.vo.ArticleListResponse
 import org.bson.types.ObjectId
 import org.jboss.logging.Logger
 import repository.ArticleRepository
-import repository.ArticleRepository.ArticleView
 import repository.UserRepository
 import security.Role
 import javax.annotation.security.RolesAllowed
@@ -46,7 +46,6 @@ class AdminArticleResource {
         val user = userRepository.findByUsername(userName)
         if(user != null){
             return articleRepository.save(Article(user, req))
-
         }else{
             throw LoginException("user not exists")
         }
@@ -110,11 +109,18 @@ class AdminArticleResource {
     @Path("articles")
     suspend fun getArticleListByUser(
         @Context securityContext: SecurityContext,
-        @QueryParam("page") page: Int?): List<ArticleView> {
+        @QueryParam("page") @DefaultValue("1") page: Int,
+        @DefaultValue("10") show: Int): List<ArticleListResponse> {
         val userName = securityContext.userPrincipal.name
         val id = userRepository.findByUsername(userName)?.id
-        val list = articleRepository.find(id,null,null,page?:1)
-        return articleRepository.convertToArticleView(id,null,null, list)
+        val list = articleRepository.find(id,null,null,page,show)
+        val filters = listOfNotNull(
+            Filters.eq(Article::author.name, id),
+            Filters.eq(Article::visible.name, true)
+        )
+        val totalPage = articleRepository.getPageLength(filters)
+
+        return articleRepository.convertToArticleReqList(totalPage, list)
     }
 
 }

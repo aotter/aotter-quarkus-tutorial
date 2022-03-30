@@ -6,4 +6,4 @@
 */.idea/*
 */target/*
 node_modules/
-META-INF/
+META-INF/resources/vue

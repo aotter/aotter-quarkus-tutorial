@@ -1,7 +1,6 @@
 <template>
-  <div class="container" style="margin-top: 350px">
-    <div class="py-5 bg-light mt-5">
-
+  <div class="container">
+    <div class="bg-light py-3">
       <div class="title d-flex">文章列表</div>
       <button class="btn btn-primary mt-2 mb-3 add d-flex">
         <router-link to="/article-edit" style="color: whitesmoke; text-decoration: none">新增文章</router-link>
@@ -41,8 +40,8 @@
           <button class="btn btn-warning mr-2">
             <router-link :to="'/article-edit?articleId='+article.id" style="color: whitesmoke; text-decoration: none">編輯</router-link>
           </button>
-          <button :id="'publishedBtn'+index" class="btn btn-info mr-2" @click="updatePublishStatus(article.id,index,!article.published)">
-            {{article.published?'取消發佈': '發佈'}}</button>
+          <button :id="'publishedBtn'+index" class="btn btn-info mr-2" @click="updatePublishStatus(article)">
+            {{article.published ? '取消發佈' : '發佈'}}</button>
           <button class="btn btn-danger" @click="deleteArticle(article.id,index)">刪除</button>
         </span>
         </td>
@@ -50,7 +49,7 @@
       </tbody>
     </table>
 
-      <nav aria-label="Page navigation example">
+      <nav aria-label="Page navigation example" v-if="pageLength > 0">
       <ul class="pagination justify-content-center">
         <li class="page-item" :class="{'disabled':currentPage == 1}" >
           <a class="page-link"  @click="previousPage()" aria-label="Previous" :disabled="currentPage == 1">
@@ -74,8 +73,6 @@
 </template>
 
 <script>
-import moment from 'moment';
-
 export default {
   name: "BackStage",
   data () {
@@ -98,14 +95,6 @@ export default {
   created() {
     this.getArticleList(1)
   },
-  filters: {
-    dateConvert: function (value){
-      console.log("dateConvert value=",value)
-
-      if (!value) return ''
-      return moment(String(value)).format('YYYY/MM/DD hh:mm a')
-    }
-  },
   methods:{
     getArticleList:function (page){
       this.articleList = []
@@ -117,13 +106,11 @@ export default {
             }
           })
           .then(list => {
-            console.log("list=",list)
             this.articleList = list
           })
     },
-    updatePublishStatus: function(articleId,index,published){
-      console.log("index=",index)
-      let url = `/api/admin/update-publish-status?articleId=${articleId}&published=${published}`
+    updatePublishStatus: function(article){
+      let url = `/api/admin/update-publish-status?articleId=${article.id}&published=${!article.published}`
       fetch(url, {
         method: 'PUT',
         headers: {
@@ -135,12 +122,11 @@ export default {
         }
       }).then(result => {
         console.log("result=",result)
-        let id = 'publishedBtn' + index
-        var text = document.getElementById(id).firstChild;
-        text.data = text.data == "取消發佈" ? "發佈" : "取消發佈";
+        article.published = !article.published
       })
     },
     deleteArticle: function(articleId,index){
+      console.log("index=",index)
       let url = `/api/admin/article?articleId=${articleId}`
       fetch(url, {
         method: 'DELETE',
@@ -151,10 +137,12 @@ export default {
         if (res.ok) {
           return res.json()
         }
-      }).then(result => {
-        console.log("result=",result)
-        // this.pageLength = list.length != 0 ? parseInt(list[0].pageLength) : 1
-        this.articleList.splice(index,1)
+      }).then(() => {
+        if(this.articleList.length == 1 && this.currentPage  > 1){
+          this.currentPage --
+        }
+        this.getArticleList(this.currentPage)
+        // this.articleList.splice(index,1)
       })
     },
     // query:function(){

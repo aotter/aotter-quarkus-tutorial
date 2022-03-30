@@ -32,10 +32,17 @@ class UserResource {
     object Templates {
         @JvmStatic
         external fun login(): TemplateInstance
+
+        @JvmStatic
+        external fun signup(): TemplateInstance
     }
 
     @GET
     @Path("login")
     fun login(): TemplateInstance = Templates.login()
+
+    @GET
+    @Path("signup")
+    fun signup(): TemplateInstance = Templates.signup()
 
 }

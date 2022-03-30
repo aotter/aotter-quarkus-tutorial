@@ -1,6 +1,6 @@
 <template>
-  <div class="container" style="margin-top: 150px">
-    <div class="py-5 bg-light mt-5">
+  <div class="container">
+    <div class="bg-light py-3">
     <div class="order-md-1">
       <h4 class="mb-3">編輯文章</h4>
       <div id="valid-check" class="needs-validation">

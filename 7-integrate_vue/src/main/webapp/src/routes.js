@@ -1,6 +1,4 @@
 import Home from './components/Home.vue';
-// import Login from './components/Login.vue';
-import Signup from './components/Signup.vue';
 import Error from './components/Error.vue';
 import BackStage from './components/BackStage.vue';
 import ArticleEdit from './components/ArticleEdit.vue';
@@ -12,24 +10,12 @@ import {
 } from 'vue-router'
 
 export const routes = [
-  // {
-  //   path: '/login',
-  //   component: Login
-  // },
-  {
-    path: '/signup',
-    component: Signup
-  },
   {
     path: '/error',
     component: Error
   },
   {
     path: '/back-stage',
-    component: BackStage
-  },
-  {
-    path: '/index/back-stage',
     component: BackStage
   },
   {
