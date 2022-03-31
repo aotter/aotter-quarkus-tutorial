@@ -5,7 +5,6 @@ import ArticleEdit from './components/ArticleEdit.vue';
 
 import {
   createRouter,
-  // createWebHistory,
   createWebHashHistory
 } from 'vue-router'
 
@@ -33,7 +32,6 @@ export const routes = [
 ];
 
 const router = createRouter({
-  // history: createWebHistory(process.env.BASE_URL),
   history: createWebHashHistory(),
   routes
 })

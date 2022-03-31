@@ -48,7 +48,6 @@ export default {
   mounted(){
     if(document.cookie.indexOf('quarkus-credential') !== -1){
       this.isLogin = true
-      // this.$router.push('/')
     } else {
       if(!["/","/index"].includes(this.$route.path)){
         location.href = "/rest/login"
