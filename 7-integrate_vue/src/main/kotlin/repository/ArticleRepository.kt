@@ -5,17 +5,12 @@ import io.quarkus.mongodb.FindOptions
 import io.quarkus.panache.common.Page
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import model.dto.ArticleReq
+import model.dto.PageRequest
 import model.po.Article
-import model.vo.ArticleListResponse
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.*
 import javax.inject.Singleton
-import kotlin.math.ceil
 
 @Singleton
 class ArticleRepository: BaseMongoRepository<Article>() {
@@ -90,33 +85,48 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     }
 
     /**
-     * @param authorId
-     * @param category
-     * @param page
-     * @param limit
-     */
-    suspend fun findPublished(authorId: ObjectId?, category: String?, page: Int = 1, limit: Int) =
-        find(authorId, category, true, page, limit)
-
-
-    /**
+     * get per page articleList by query
      * @param authorId
      * @param category
      * @param published
      * @param page
      * @param show
      */
-    suspend fun find(authorId: ObjectId?, category: String?, published: Boolean?, page: Int = 1, show: Int): List<Article> {
+    suspend fun list(authorId: ObjectId?, category: String?, published: Boolean?, page: Int = 1, show: Int) =
+        find(
+            buildQuery(authorId, category, published),
+            PageRequest().apply {
+                this.page = page
+                this.show = show
+            })
 
-        // reuse Page for logic check
-        val checkedPage = Page.of(page - 1 , show)
+    /**
+     * count total articles num by query
+     * @param authorId
+     * @param category
+     * @param published
+     */
+    suspend fun count(authorId: ObjectId?, category: String?, published: Boolean?) =
+        count(Filters.and(buildQuery(authorId, category, published)))
 
-        val filters = listOfNotNull(
-            published?.let { Filters.eq(Article::published.name, it) },
+    private fun buildQuery(authorId: ObjectId?, category: String?, published: Boolean?): List<Bson>{
+        return listOfNotNull(
             authorId?.let { Filters.eq(Article::author.name, it) },
             category?.let { Filters.eq(Article::category.name, it) },
-            Filters.eq("visible", true)
+            published?.let { Filters.eq(Article::published.name, it) },
+            Filters.eq(Article::visible.name, true)
         )
+    }
+
+    /**
+     * @param filters
+     * @param pageReq
+     */
+    suspend fun find(filters: List<Bson>, pageReq: PageRequest): List<Article> {
+
+        // reuse Page for logic check
+        val checkedPage = Page.of(pageReq.page - 1 , pageReq.show)
+
         val filter = if (filters.size > 1) {
             Filters.and(filters)
         } else {
@@ -131,29 +141,5 @@ class ArticleRepository: BaseMongoRepository<Article>() {
         val find = filter?.let { col.find(filter, options) } ?: col.find(options)
 
         return find.collect().asList().awaitSuspending()
-    }
-
-    //TODO move to service
-    fun  convertToArticleReqList(pageLength: Int?, list: List<Article>, ): List<ArticleListResponse>{
-        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-            .withLocale(Locale.TAIWAN)
-            .withZone(ZoneId.systemDefault())
-
-        return list.map {
-            ArticleListResponse(
-                id = it.id.toString(),
-                authorName = it.authorName,
-                category = it.category,
-                title = it.title,
-                published = it.published,
-                lastModifiedTime = formatter.format(it.lastModifiedTime),
-                pageLength = pageLength
-            )
-        }
-    }
-
-    suspend fun getPageLength(filters: List<Bson>): Int{
-        val totalArticlesNum = count(Filters.and(filters))
-        return ceil(totalArticlesNum.toDouble() / 10).toInt()
     }
 }

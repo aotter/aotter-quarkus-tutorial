@@ -20,8 +20,9 @@
       <table class="table table-bordered text-center">
       <thead class="table-secondary" >
       <tr>
-        <th scope="col" width="40%">文章名稱</th>
+        <th scope="col" :width="user.role == 'USER' ? '40%' : '30%'">文章名稱</th>
         <th scope="col" width="15%">文章類別</th>
+        <th scope="col" v-if="user.role == 'ADMIN'">作者</th>
         <th scope="col" width="20%">最後更新日期</th>
         <th scope="col" width="25%"></th>
       </tr>
@@ -34,6 +35,7 @@
           </a>
         </th>
         <td>{{article.category}}</td>
+        <td v-if="user.role == 'ADMIN'">{{article.authorName}}</td>
         <td>{{ article.lastModifiedTime}}</td>
         <td class="d-flex flex-wrap">
         <span class="my-1">
@@ -75,10 +77,11 @@
 <script>
 export default {
   name: "BackStage",
+  props: ['isLogin','user'],
   data () {
     return {
       currentPage: 1,
-      // pageLength: 1,
+      pageLength: 1,
       param: {
         name: '',
         type: '',
@@ -86,11 +89,6 @@ export default {
       },
       articleList:[],
     }
-  },
-  computed:{
-    pageLength(){
-      return this.articleList.length != 0 ? parseInt( this.articleList[0].pageLength) : 1
-    },
   },
   created() {
     this.getArticleList(1)
@@ -105,8 +103,11 @@ export default {
               return res.json()
             }
           })
-          .then(list => {
-            this.articleList = list
+          .then(response => {
+            this.articleList = response.list
+            if(response.totalPages > 1){
+              this.pageLength = response.totalPages
+            }
           })
     },
     updatePublishStatus: function(article){

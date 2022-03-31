@@ -28,10 +28,13 @@ class UserRepository : BaseMongoRepository<User>() {
      * @param password password
      * @param role user role
      */
-    suspend fun create(username: String, password: String, roles: MutableSet<Role>): User =
-        save(User(username = username.trim().toLowerCase(), password = BcryptUtil.bcryptHash(password), roles = roles))
+    suspend fun create(username: String, password: String, role: Role): User =
+        save(User(
+            username = username.trim().toLowerCase(),
+            password = BcryptUtil.bcryptHash(password),
+            role = role))
 
-    suspend fun updateRole(user: User, roles: MutableSet<Role>): User = save(user.apply { this.roles = roles })
+    suspend fun updateRole(user: User, role: Role): User = save(user.apply { this.role = role })
 
     suspend fun updatePassword(user: User,password: String): User =
         save(user.apply { this.password = BcryptUtil.bcryptHash(password) })

@@ -55,7 +55,7 @@ class ArticleRepositoryTest {
         userColl = MongoClients.create(uri).getDatabase(db).getCollection(userCol)
 
         runBlocking {
-            val user = userRepo.create(TestRole.USERNAME, BcryptUtil.bcryptHash(TestRole.PASSWORD), mutableSetOf(Role.USER))
+            val user = userRepo.create(TestRole.USERNAME, BcryptUtil.bcryptHash(TestRole.PASSWORD), Role.USER)
 
             val articleReq = ArticleReq(
                 category = "分類一",
@@ -115,7 +115,8 @@ class ArticleRepositoryTest {
         runBlocking {
             articleRepo.updatePublishStatus(articleId, false)
             val PAGE = 1
-            val list = articleRepo.findPublished(null, null, PAGE)
+            val SHOW = 10
+            val list = articleRepo.list(null, null, true, PAGE, SHOW)
             Assertions.assertEquals(0, list.size)
         }
     }
@@ -132,7 +133,8 @@ class ArticleRepositoryTest {
     fun `get user article list`(){
         runBlocking {
             val PAGE = 1
-            val list = articleRepo.findPublished(null, null, PAGE)
+            val SHOW = 10
+            val list = articleRepo.list(null, null, true, PAGE, SHOW)
             Assertions.assertEquals(1, list.size)
         }
     }

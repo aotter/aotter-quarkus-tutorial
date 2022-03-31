@@ -18,7 +18,7 @@ abstract class AbstractMongoIdentityProvider {
     open fun buildSecurityIdentity(user: User): SecurityIdentity{
         val builder = QuarkusSecurityIdentity.builder()
             .setPrincipal{ user.username }
-        user.roles?.forEach{ builder.addRole(it.name) }
+        builder.addRole(user.role?.name)
         return builder.build() as SecurityIdentity
     }
 

@@ -14,8 +14,8 @@ data class User(
     @JsonIgnore
     var password: String? = null,
 
-    var roles: MutableSet<Role>? = mutableSetOf(Role.USER),
     var role: Role? = Role.USER
+
 ) : BaseMongoEntity<User>() {
 
     fun verifyPassword(passwordToVerify: CharArray): Boolean = runCatching {

@@ -2,10 +2,7 @@ package model.po
 
 import io.quarkus.mongodb.panache.common.MongoEntity
 import model.dto.ArticleReq
-import org.bson.Document
 import org.bson.types.ObjectId
-import java.time.Instant
-import java.util.*
 
 @MongoEntity
 data class Article(

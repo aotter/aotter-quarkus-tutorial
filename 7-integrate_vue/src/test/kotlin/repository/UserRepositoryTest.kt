@@ -57,11 +57,12 @@ class UserRepositoryTest {
 
         runBlocking {
             for(i in 1 .. totalCount){
-                val roles = mutableSetOf<Role>()
-                roles.add(Role.USER)
-                if(i > 7) roles.add(Role.ADMIN)
-                userRepo.create("user$i", BcryptUtil.bcryptHash("pwd$i"), roles)
-//                Uni.createFrom().publisher(collection.insertOne(User("user$i", BcryptUtil.bcryptHash("pwd$i"), roles))).awaitSuspending()
+
+                if(i > 7){
+                    userRepo.create("user$i", BcryptUtil.bcryptHash("pwd$i"), Role.ADMIN)
+                }else{
+                    userRepo.create("user$i", BcryptUtil.bcryptHash("pwd$i"), Role.USER)
+                }
             }
         }
     }
@@ -70,15 +71,15 @@ class UserRepositoryTest {
     fun `create user`(){
         val TEST_USER_NAME_C = "test_user_c"
         val TEST_PASSWORD_C = "test_password_c"
-        val TEST_ROLES = mutableSetOf(Role.USER)
+        val TEST_ROLE = Role.USER
 
         runBlocking {
             val beforeCount = userRepo.count(Filters.exists(User::username.name))
-            val insertUser = userRepo.create(TEST_USER_NAME_C, TEST_PASSWORD_C, TEST_ROLES)
+            val insertUser = userRepo.create(TEST_USER_NAME_C, TEST_PASSWORD_C, TEST_ROLE)
             val afterCount = userRepo.count(Filters.exists(User::username.name))
             Assertions.assertEquals(afterCount, beforeCount + 1 )
             Assertions.assertEquals(TEST_USER_NAME_C, insertUser.username)
-            Assertions.assertEquals(TEST_ROLES, insertUser.roles)
+            Assertions.assertEquals(TEST_ROLE, insertUser.role)
             `verify user password`(TEST_PASSWORD_C, insertUser)
         }
     }
@@ -91,10 +92,10 @@ class UserRepositoryTest {
     @Test
     fun `update user role`(){
         runBlocking {
-            val newRole = mutableSetOf(Role.USER, Role.ADMIN)
+            val newRole = Role.ADMIN
             val user =  userRepo.findByUsername("user1")!!
             val updatedUser = userRepo.updateRole(user, newRole)
-            Assertions.assertEquals(newRole, updatedUser.roles)
+            Assertions.assertEquals(newRole, updatedUser.role)
         }
     }
 
@@ -131,9 +132,9 @@ class UserRepositoryTest {
     @Test
     fun `find users as list with filter`(){
         runBlocking {
-            val list = userRepo.findAsList(Filters.eq("roles", Role.ADMIN.name))
+            val list = userRepo.findAsList(Filters.eq("role", Role.ADMIN.name))
             Assertions.assertEquals(adminCount, list.size)
-            list.forEach { Assertions.assertTrue(it.roles?.contains(Role.ADMIN) ?: false) }
+            list.forEach { Assertions.assertTrue(it.role?.equals(Role.ADMIN) ?: false) }
         }
     }
 
@@ -149,7 +150,7 @@ class UserRepositoryTest {
     fun `find users as list with filter and option`(){
         runBlocking {
             val list = userRepo.findAsList(
-                    Filters.eq("roles", Role.ADMIN.name),
+                    Filters.eq("role", Role.ADMIN.name),
                     FindOptions().limit(1)
             )
             Assertions.assertEquals(1, list.size)
@@ -168,7 +169,7 @@ class UserRepositoryTest {
     fun `find users as flow with filter`(){
         runBlocking {
             val list = mutableListOf<User>()
-            userRepo.findAsFlow(Filters.eq("roles", Role.ADMIN.name)).collect { list.add(it) }
+            userRepo.findAsFlow(Filters.eq("role", Role.ADMIN.name)).collect { list.add(it) }
             Assertions.assertEquals(adminCount, list.size)
         }
     }
@@ -187,18 +188,18 @@ class UserRepositoryTest {
         runBlocking {
             val list = mutableListOf<User>()
             userRepo.findAsFlow(
-                    Filters.eq("roles", Role.ADMIN.name),
+                    Filters.eq("role", Role.ADMIN.name),
                     FindOptions().limit(1))
                     .collect { list.add(it) }
             Assertions.assertEquals(1, list.size)
-            Assertions.assertTrue(list.first().roles?.contains(Role.ADMIN) ?: false)
+            Assertions.assertTrue(list.first().role?.equals(Role.ADMIN) ?: false)
         }
     }
 
     @Test
     fun `count filtered users`(){
         runBlocking {
-            val count = userRepo.count(Filters.eq("roles", Role.ADMIN.name))
+            val count = userRepo.count(Filters.eq("role", Role.ADMIN.name))
             Assertions.assertEquals(adminCount.toLong(), count)
         }
     }
@@ -209,11 +210,11 @@ class UserRepositoryTest {
             val user = userRepo.findOne(
                     Filters.and(
                             Filters.eq("username", "user8"),
-                            Filters.eq("roles", Role.ADMIN.name)
+                            Filters.eq("role", Role.ADMIN.name)
                     )
             )
             Assertions.assertEquals("user8", user?.username)
-            Assertions.assertTrue(user?.roles?.contains(Role.ADMIN) ?: false)
+            Assertions.assertTrue(user?.role?.equals(Role.ADMIN) ?: false)
         }
     }
 
@@ -223,7 +224,7 @@ class UserRepositoryTest {
             val user = userRepo.findOne(
                     Filters.and(
                             Filters.eq("username", "user1"),
-                            Filters.eq("roles", Role.ADMIN.name)
+                            Filters.eq("role", Role.ADMIN.name)
                     )
             )
             Assertions.assertNull(user)

@@ -1,8 +1,8 @@
 <template>
   <div class="container-fluid w-100">
-    <Header :isLogin="isLogin" @logout="logout"></Header>
+    <Header :isLogin="isLogin" :user="user" @logout="logout"></Header>
     <div class="overflow-auto" style="height: calc(100vh - 56px); margin-top: 56px;">
-      <router-view :isLogin="isLogin"></router-view>
+      <router-view :isLogin="isLogin" :user="user"></router-view>
     </div>
   </div>
 </template>
@@ -16,7 +16,11 @@ export default {
   },
   data: () => {
     return {
-      isLogin: false
+      isLogin: false,
+      user: {
+        username: '',
+        role: ''
+      }
     }
   },
   methods: {
@@ -28,6 +32,18 @@ export default {
             location.href = "/rest/login"
         })
     },
+  },
+  created() {
+    fetch('api/rest/user/me')
+    .then(res =>{
+      if (res.ok){
+        return res.json()
+      }else {
+        location.href = "/rest/login"
+      }
+    }).then( user =>{
+      this.user = user
+    })
   },
   mounted(){
     if(document.cookie.indexOf('quarkus-credential') !== -1){

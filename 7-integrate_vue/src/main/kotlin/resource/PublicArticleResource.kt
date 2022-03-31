@@ -4,10 +4,10 @@ import com.mongodb.client.model.Filters
 import io.quarkus.qute.CheckedTemplate
 import io.quarkus.qute.TemplateInstance
 import io.quarkus.qute.runtime.TemplateProducer
-import model.dto.ArticleReq
-import model.po.Article
+import model.vo.ArticleResponse
 import org.bson.types.ObjectId
 import repository.ArticleRepository
+import service.ArticleService
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -25,12 +25,15 @@ class PublicArticleResource {
     lateinit var articleRepository: ArticleRepository
 
     @Inject
+    lateinit var articleService: ArticleService
+
+    @Inject
     lateinit var templateProducer: TemplateProducer
 
     @CheckedTemplate(requireTypeSafeExpressions = false)
     object Templates {
         @JvmStatic
-        external fun article(article: ArticleReq): TemplateInstance
+        external fun article(article: ArticleResponse): TemplateInstance
 
         @JvmStatic
         external fun articleList(): TemplateInstance
@@ -52,7 +55,7 @@ class PublicArticleResource {
             .withLocale(Locale.TAIWAN)
             .withZone(ZoneId.systemDefault())
 
-        return Templates.article(ArticleReq(
+        return Templates.article(ArticleResponse(
             title = result!!.title,
             content = result.content,
             lastModifiedTime = formatter.format(result.lastModifiedTime),
@@ -65,21 +68,14 @@ class PublicArticleResource {
     @Path("article-list")
     suspend fun getAllArticleList(@QueryParam("author") author: String?,
                                   @QueryParam("category") category: String?,
-                                  @QueryParam("page") page: Int?): TemplateInstance =
+                                  @QueryParam("page") @DefaultValue("1") page: Int,
+                                  @QueryParam("show") @DefaultValue("6") show: Int
+                                  ): TemplateInstance =
         Templates.articleList().apply {
-            val list = articleRepository.findPublished(toObjectOrNull(author), category,page?:1,6)
+            val result = articleService.findAsListResponse(toObjectOrNull(author), category,true, page, show)
 
-            val filters = listOfNotNull(
-                author?.let { Filters.eq(Article::author.name, ObjectId(author)) },
-                category?.let { Filters.eq(Article::category.name, category) },
-                Filters.eq(Article::published.name, true),
-                Filters.eq(Article::visible.name, true)
-            )
-            val totalPage = articleRepository.getPageLength(filters)
-            val articleList = articleRepository.convertToArticleReqList(totalPage,list)
-
-            data("articleList", articleList)
-            data("totalPage", totalPage)
+            data("articleList", result.list)
+            data("totalPage", result.totalPages)
         }
 
     private fun toObjectOrNull(id: String?): ObjectId?{

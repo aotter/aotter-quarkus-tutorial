@@ -5,11 +5,13 @@ import io.quarkus.security.identity.SecurityIdentity
 import model.dto.ArticleReq
 import model.po.Article
 import model.vo.ArticleListResponse
+import model.vo.BaseListResponse
 import org.bson.types.ObjectId
 import org.jboss.logging.Logger
 import repository.ArticleRepository
 import repository.UserRepository
 import security.Role
+import service.ArticleService
 import javax.annotation.security.RolesAllowed
 import javax.inject.Inject
 import javax.security.auth.login.LoginException
@@ -30,6 +32,9 @@ class AdminArticleResource {
 
     @Inject
     lateinit var articleRepository: ArticleRepository
+
+    @Inject
+    lateinit var articleService: ArticleService
 
     @Inject
     lateinit var userRepository: UserRepository
@@ -110,17 +115,12 @@ class AdminArticleResource {
     suspend fun getArticleListByUser(
         @Context securityContext: SecurityContext,
         @QueryParam("page") @DefaultValue("1") page: Int,
-        @DefaultValue("10") show: Int): List<ArticleListResponse> {
-        val userName = securityContext.userPrincipal.name
-        val id = userRepository.findByUsername(userName)?.id
-        val list = articleRepository.find(id,null,null,page,show)
-        val filters = listOfNotNull(
-            Filters.eq(Article::author.name, id),
-            Filters.eq(Article::visible.name, true)
-        )
-        val totalPage = articleRepository.getPageLength(filters)
-
-        return articleRepository.convertToArticleReqList(totalPage, list)
+        @QueryParam("show") @DefaultValue("10") show: Int): BaseListResponse<ArticleListResponse> {
+        var author: ObjectId? = null
+         if(securityContext.isUserInRole(Role.USER_CONSTANT)){
+            val userName = securityContext.userPrincipal.name
+            author = userRepository.findByUsername(userName)?.id
+        }
+        return articleService.findAsListResponse(author, null,null, page, show)
     }
-
 }

@@ -2,12 +2,14 @@ package resource.api
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import model.po.User
+import model.vo.UserResponse
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody
 import org.jboss.logging.Logger
 import repository.UserRepository
 import security.Role
 import javax.annotation.security.RolesAllowed
 import javax.inject.Inject
+import javax.security.auth.login.LoginException
 import javax.ws.rs.*
 import javax.ws.rs.core.*
 
@@ -30,13 +32,21 @@ class UserResource {
     @POST
     suspend fun signUp(@RequestBody body: SignUpRequest): User {
         val (username, password) = body
-        return userRepository.create(username,password,mutableSetOf(Role.USER))
+        return userRepository.create(username,password,Role.USER)
     }
 
     @Path("me")
     @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
     @GET
-    fun user(@Context securityContext: SecurityContext): String = "user ${securityContext.userPrincipal.name}"
+    suspend fun user(@Context securityContext: SecurityContext): UserResponse{
+        val userName = securityContext.userPrincipal.name
+        val user = userRepository.findByUsername(userName)
+        if(user != null){
+            return UserResponse(user)
+        }else{
+            throw LoginException("user not exists")
+        }
+    }
 
     @Path("admin")
     @RolesAllowed(Role.ADMIN_CONSTANT)

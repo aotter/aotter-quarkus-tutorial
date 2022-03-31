@@ -6,6 +6,5 @@ data class ArticleListResponse (
     val category: String? = null,
     val title: String? = null,
     val lastModifiedTime: String? = null,
-    val published: Boolean?= null,
-    val pageLength: Int? = 1
+    val published: Boolean?= null
 )

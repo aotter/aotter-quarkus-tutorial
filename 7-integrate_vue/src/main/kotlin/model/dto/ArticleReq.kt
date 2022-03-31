@@ -20,10 +20,4 @@ data class ArticleReq (
     NotNull(message = "content may not be null")
     ]
     var content: String? = null,
-
-    var author: String? = null,
-
-    var authorName: String? = null,
-
-    var lastModifiedTime: String? = null
 )
