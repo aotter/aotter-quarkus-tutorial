@@ -14,6 +14,6 @@ data class BaseListResponse<T>(
         page = page,
         show = show,
         total = total,
-        totalPages = ceil(total.toDouble() / 10).toInt()
+        totalPages = ceil(total.toDouble() / show).toInt()
     )
 }

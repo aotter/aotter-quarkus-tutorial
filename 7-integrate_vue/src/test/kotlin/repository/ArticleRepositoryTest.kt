@@ -8,7 +8,7 @@ import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import kotlinx.coroutines.runBlocking
-import model.dto.ArticleReq
+import model.dto.ArticleRequest
 import model.po.Article
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -57,12 +57,12 @@ class ArticleRepositoryTest {
         runBlocking {
             val user = userRepo.create(TestRole.USERNAME, BcryptUtil.bcryptHash(TestRole.PASSWORD), Role.USER)
 
-            val articleReq = ArticleReq(
+            val articleRequest = ArticleRequest(
                 category = "分類一",
                 title = "測試標題一",
                 content = "測試內容一"
             )
-            val article = articleRepo.save(Article(user, articleReq))
+            val article = articleRepo.save(Article(user, articleRequest))
             articleId = article.id!!
             articleRepo.updatePublishStatus(articleId,true)
         }
@@ -73,7 +73,7 @@ class ArticleRepositoryTest {
         val TEST_CATEGORY = "分類二"
         val TEST_TITLE = "測試標題二"
         val TEST_CONTENT = "測試內容二"
-        val testData = ArticleReq(
+        val testData = ArticleRequest(
             category = TEST_CATEGORY,
             title = TEST_TITLE,
             content = TEST_CONTENT)
@@ -96,7 +96,7 @@ class ArticleRepositoryTest {
         val TEST_UPDATE_CATEGORY = "更新分類一"
         val TEST_UPDATE_TITLE = "更新測試標題一"
         val TEST_UPDATE_CONTENT = "更新測試內容一"
-        val testData = ArticleReq(
+        val testData = ArticleRequest(
             category = TEST_UPDATE_CATEGORY,
             title = TEST_UPDATE_TITLE,
             content = TEST_UPDATE_CONTENT)

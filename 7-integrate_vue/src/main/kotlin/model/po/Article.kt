@@ -1,7 +1,7 @@
 package model.po
 
 import io.quarkus.mongodb.panache.common.MongoEntity
-import model.dto.ArticleReq
+import model.dto.ArticleRequest
 import org.bson.types.ObjectId
 
 @MongoEntity
@@ -44,7 +44,7 @@ data class Article(
 
 ): BaseMongoEntity<Article>(){
 
-    constructor(author: User, req: ArticleReq) : this(
+    constructor(author: User, req: ArticleRequest) : this(
         author = author.id!!,
         authorName = author.username!!,
         category = req.category!!,

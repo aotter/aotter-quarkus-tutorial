@@ -4,7 +4,7 @@ import com.mongodb.client.model.*
 import io.quarkus.mongodb.FindOptions
 import io.quarkus.panache.common.Page
 import io.smallrye.mutiny.coroutines.awaitSuspending
-import model.dto.ArticleReq
+import model.dto.ArticleRequest
 import model.dto.PageRequest
 import model.po.Article
 import org.bson.conversions.Bson
@@ -54,9 +54,9 @@ class ArticleRepository: BaseMongoRepository<Article>() {
     /**
      * update article by id
      * @param id [ObjectId] of the article
-     * @param data [ArticleReq] of the article
+     * @param data [ArticleRequest] of the article
      */
-    suspend fun update(id: ObjectId, data: ArticleReq): Article? {
+    suspend fun update(id: ObjectId, data: ArticleRequest): Article? {
         return col.findOneAndUpdate(
             Filters.eq(id),
             Updates.combine(

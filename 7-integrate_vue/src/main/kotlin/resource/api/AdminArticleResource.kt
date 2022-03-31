@@ -2,7 +2,7 @@ package resource.api
 
 import com.mongodb.client.model.Filters
 import io.quarkus.security.identity.SecurityIdentity
-import model.dto.ArticleReq
+import model.dto.ArticleRequest
 import model.po.Article
 import model.vo.ArticleListResponse
 import model.vo.BaseListResponse
@@ -46,7 +46,7 @@ class AdminArticleResource {
     @Path("article")
     suspend fun create(
         @Context securityContext: SecurityContext,
-        @Valid req: ArticleReq): Article {
+        @Valid req: ArticleRequest): Article {
         val userName = securityContext.userPrincipal.name
         val user = userRepository.findByUsername(userName)
         if(user != null){
@@ -74,7 +74,7 @@ class AdminArticleResource {
     suspend fun update(
         @Context securityContext: SecurityContext,
         @QueryParam("articleId") articleId: String,
-        @Valid req: ArticleReq): Article {
+        @Valid req: ArticleRequest): Article {
         val result = articleRepository.update(ObjectId(articleId),req)
         if(result!= null){
             return result

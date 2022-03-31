@@ -2,7 +2,7 @@ package model.dto
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
 
-data class ArticleReq (
+data class ArticleRequest (
 
     @field:[
     NotNull(message = "category may not be null")

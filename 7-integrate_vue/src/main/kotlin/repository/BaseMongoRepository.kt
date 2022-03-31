@@ -16,8 +16,7 @@ import org.jboss.logging.Logger
 import java.time.Instant
 import javax.inject.Inject
 
-//@ExperimentalCoroutinesApi
-@OptIn(ExperimentalCoroutinesApi::class)
+@ExperimentalCoroutinesApi
 abstract class BaseMongoRepository<Entity : Any> : ReactivePanacheMongoRepository<Entity> {
 
     @Inject
