@@ -6,17 +6,6 @@
         <router-link to="/article-edit" style="color: whitesmoke; text-decoration: none">新增文章</router-link>
       </button>
 
-<!--    <div class="mt-3 mb-3 d-flex">-->
-<!--      <input class="form-control mr-sm-2 w-30" type="search" placeholder="文章名稱" aria-label="tag">-->
-<!--      <select class="form-control mr-sm-4 w-30">-->
-<!--        <option value="">請選擇</option>-->
-<!--        <option value="分類ㄧ">分類ㄧ</option>-->
-<!--        <option value="分類二">分類二</option>-->
-<!--        <option value="分類三">分類三</option>-->
-<!--      </select>-->
-<!--      <button class="btn btn-outline-success my-2 my-sm-0 w-30">搜尋</button>-->
-<!--    </div>-->
-
       <table class="table table-bordered text-center">
       <thead class="table-secondary" >
       <tr>
@@ -143,25 +132,8 @@ export default {
           this.currentPage --
         }
         this.getArticleList(this.currentPage)
-        // this.articleList.splice(index,1)
       })
     },
-    // query:function(){
-    //   let url = Const.bgDomain + '/material-query?subject=' + this.$route.query.subject
-    //   url += `&backendName=${this.param.name}`
-    //   url += `&questionType=${this.param.type}`
-    //   url += `&tag=${this.param.tag}`
-    //   fetch(url)
-    //       .then(res => {
-    //         if (res.ok) {
-    //           return res.json()
-    //         }
-    //       })
-    //       .then(list => {
-    //         this.pageLength = list.length != 0 ? parseInt(list[0].pageLength) : 1
-    //         this.materialList = list
-    //       })
-    // },
     changePage: function (page){
       this.currentPage = page
       this.getArticleList(this.currentPage)
