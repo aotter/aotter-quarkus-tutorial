@@ -1,18 +1,13 @@
 package repository
 
 import com.mongodb.client.model.Filters
-import com.mongodb.reactivestreams.client.MongoClients
-import com.mongodb.reactivestreams.client.MongoCollection
 import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.test.junit.QuarkusTest
-import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import kotlinx.coroutines.runBlocking
 import model.dto.ArticleRequest
 import model.po.Article
-import org.bson.Document
 import org.bson.types.ObjectId
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.junit.jupiter.api.*
 import security.Role
 import javax.inject.Inject
@@ -27,35 +22,19 @@ class ArticleRepositoryTest {
     @Inject
     lateinit var userRepo: UserRepository
 
-    private lateinit var articleColl: MongoCollection<Document>
-    private lateinit var userColl: MongoCollection<Document>
-
-    @ConfigProperty(name = "%test.quarkus.mongodb.database")
-    private lateinit var db: String
-
-    @ConfigProperty(name = "%test.quarkus.mongodb.connection-string")
-    private lateinit var uri: String
-
-    @ConfigProperty(name = "%test.quarkus.mongodb.col.article")
-    private lateinit var articleCol: String
-
-    @ConfigProperty(name = "%test.quarkus.mongodb.col.user")
-    private lateinit var userCol: String
-
     object TestRole {
         const val USERNAME = "test-user"
         const val PASSWORD = "test-password"
     }
 
     lateinit var articleId: ObjectId
+    lateinit var userId: ObjectId
 
     @BeforeEach
     fun init(){
-        articleColl = MongoClients.create(uri).getDatabase(db).getCollection(articleCol)
-        userColl = MongoClients.create(uri).getDatabase(db).getCollection(userCol)
-
         runBlocking {
             val user = userRepo.create(TestRole.USERNAME, BcryptUtil.bcryptHash(TestRole.PASSWORD), Role.USER)
+            userId = user.id!!
 
             val articleRequest = ArticleRequest(
                 category = "分類一",
@@ -134,8 +113,16 @@ class ArticleRepositoryTest {
         runBlocking {
             val PAGE = 1
             val SHOW = 10
-            val list = articleRepo.list(null, null, true, PAGE, SHOW)
+            val list = articleRepo.list(userId, null, true, PAGE, SHOW)
             Assertions.assertEquals(1, list.size)
+        }
+    }
+
+    @Test
+    fun `get total published article count`(){
+        runBlocking {
+            val num = articleRepo.count(null, null, true)
+            Assertions.assertEquals(1, num)
         }
     }
 
@@ -150,8 +137,8 @@ class ArticleRepositoryTest {
     @AfterEach
     fun clean(){
         runBlocking {
-            Uni.createFrom().publisher(articleColl.drop()).awaitSuspending()
-            Uni.createFrom().publisher(userColl.drop()).awaitSuspending()
+            articleRepo.mongoCollection().drop().awaitSuspending()
+            userRepo.mongoCollection().drop().awaitSuspending()
         }
     }
 }

@@ -25,10 +25,10 @@ export const routes = [
     path: '/',
     component: Home
   },
-  {
-    path: '/index',
-    component: Home
-  }
+  // {
+  //   path: '/index',
+  //   component: Home
+  // }
 ];
 
 const router = createRouter({

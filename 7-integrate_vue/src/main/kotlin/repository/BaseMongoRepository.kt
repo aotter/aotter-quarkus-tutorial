@@ -55,7 +55,6 @@ abstract class BaseMongoRepository<Entity : Any> : ReactivePanacheMongoRepositor
      */
     suspend fun ReactivePanacheQuery<Entity>.toList() = this.list().awaitSuspending()
 
-
     /**
      * convert a [ReactivePanacheQuery] to coroutine flow
      */

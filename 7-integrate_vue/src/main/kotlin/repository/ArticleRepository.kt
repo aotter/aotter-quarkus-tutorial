@@ -123,7 +123,6 @@ class ArticleRepository: BaseMongoRepository<Article>() {
      * @param pageReq
      */
     suspend fun find(filters: List<Bson>, pageReq: PageRequest): List<Article> {
-
         // reuse Page for logic check
         val checkedPage = Page.of(pageReq.page - 1 , pageReq.show)
 

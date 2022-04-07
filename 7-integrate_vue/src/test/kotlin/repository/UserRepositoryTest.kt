@@ -1,23 +1,16 @@
 package repository
 
-import com.mongodb.ConnectionString
-import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.Filters
-import com.mongodb.reactivestreams.client.MongoClients
-import com.mongodb.reactivestreams.client.MongoCollection
+import com.mongodb.client.model.FindOneAndUpdateOptions
+import com.mongodb.client.model.Updates
 import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.mongodb.FindOptions
 import io.quarkus.test.junit.QuarkusTest
-import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import model.po.User
-import org.bson.codecs.configuration.CodecRegistries
-import org.bson.codecs.configuration.CodecRegistry
-import org.bson.codecs.pojo.PojoCodecProvider
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.junit.jupiter.api.*
 import security.Role
 import javax.inject.Inject
@@ -33,28 +26,8 @@ class UserRepositoryTest {
 
     private val adminCount = 3
 
-    private val COLLECTION_NAME = "User"
-
-    @ConfigProperty(name = "%test.quarkus.mongodb.database")
-    private lateinit var db: String
-
-    @ConfigProperty(name = "%test.quarkus.mongodb.connection-string")
-    private lateinit var uri: String
-
-    private lateinit var collection: MongoCollection<User>
-
     @BeforeEach
     fun init(){
-        val pojoCodecRegistry: CodecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-                CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build()))
-        val settings: MongoClientSettings = MongoClientSettings.builder()
-                .applyConnectionString(ConnectionString(uri))
-                .codecRegistry(pojoCodecRegistry)
-                .build()
-
-        collection = MongoClients.create(settings).getDatabase(db).getCollection(COLLECTION_NAME, User::class.java)
-
-
         runBlocking {
             for(i in 1 .. totalCount){
 
@@ -231,10 +204,22 @@ class UserRepositoryTest {
         }
     }
 
+    @Test
+    fun `find specific user and update`(){
+        runBlocking {
+            val user = userRepo.findOneAndUpdate(
+                Filters.eq("username", "user1"),
+                Updates.set("role", Role.USER.name),
+                FindOneAndUpdateOptions().upsert(false)
+            )
+            Assertions.assertTrue(user?.role?.equals(Role.USER) ?: false)
+        }
+    }
+
     @AfterEach
     fun clean(){
         runBlocking {
-            Uni.createFrom().publisher(collection.drop()).awaitSuspending()
+            userRepo.mongoCollection().drop().awaitSuspending()
         }
     }
 }

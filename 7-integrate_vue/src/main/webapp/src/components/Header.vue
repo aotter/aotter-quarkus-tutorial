@@ -18,7 +18,7 @@
             </li>
           </ul>
         </div>
-        <div class="mr-3" style="color: whitesmoke;">{{user.role === 'USER'? '使用者' : '管理者'}} {{user.username}}，您好</div>
+        <div v-if="user.role" class="mr-3" style="color: whitesmoke;">{{user.role === 'USER'? '使用者' : '管理者'}} {{user.username}}，您好</div>
         <a class="btn btn-outline-primary mr-2" v-if="isLogin === false" href="/rest/login">登入</a>
         <a class="btn btn-outline-primary mr-2"  href="/rest/signup">註冊</a>
         <a class="btn btn-outline-primary mr-2" v-if="isLogin === true" @click="logout">登出</a>
