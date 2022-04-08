@@ -81,7 +81,7 @@ export default {
           body: JSON.stringify(this.article)
         }).then(res => {
           if (res.ok) {
-            this.$router.push(`/back-stage`)
+            this.$router.push(`/`)
           }
         })
       }

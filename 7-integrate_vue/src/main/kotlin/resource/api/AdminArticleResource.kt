@@ -24,7 +24,7 @@ import javax.ws.rs.core.SecurityContext
 @RolesAllowed(Role.ADMIN_CONSTANT, Role.USER_CONSTANT)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("api/admin")
+@Path("/api/admin")
 class AdminArticleResource {
 
     @Inject

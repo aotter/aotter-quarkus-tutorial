@@ -78,11 +78,11 @@
           * createIndex(vararg indexModels: IndexModel)
       * 更新 lastModifiedTime or createdTime
           * save(entity: Entity)
-      * PanchQL 擴充方法
+      * PanacheQL 擴充方法
           * ReactivePanacheQuery<Entity>.toList()
-              * PancheQL list() with coroutine
+              * PanacheQL list() with coroutine
           * ReactivePanacheQuery<Entity>.asFlow()
-              * PancheQL stream() to coroutine flow
+              * PanacheQL stream() to coroutine flow
       * 查詢方法
           * findAsList(filter: Bson?): List<Entity>
           * findAsList(filter: Bson?, findOptions: FindOptions): List<Entity>
@@ -143,7 +143,7 @@
         * 套件位置：src.main.kotlin.resource
         * 需註解為 @Consumes(MediaType.TEXT_HTML)
         * 需註解為 @Produces(MediaType.TEXT_HTML)
-        * @Path("/rest")
+        * @Path("/")
         * 端點：
             * login(): TemplateInstance
               * 使用者登入頁
@@ -165,8 +165,9 @@
         * 套件位置：src.main.kotlin.resource.api
         * 需註解為 @Consumes(MediaType.APPLICATION_JSON)
         * 需註解為 @Produces(MediaType.APPLICATION_JSON)
-        * @Path("api/rest/user")
+        * @Path("/api/user")
         * data class SignUpRequest
+       
           | username     | String   |    @JsonProperty("username")  |
           | -------- | -------- | -------- |
           | password     | String    |  @JsonProperty("password")  |
@@ -239,7 +240,7 @@
            | category     | String?   | 文章分類           |        
            | -------- |----------------| -------- |
            | title     | String?    | 文章標題           |
-           | content     | String??    | 文章內容           |
+           | content     | String?    | 文章內容           |
            | author     | String?    | 使用者（作者） UserId |
            | authorName     | String?    | 使用者名稱          |
            | lastModifiedTime     | String?    | 最後更新時間         |

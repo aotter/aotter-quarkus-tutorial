@@ -6,4 +6,5 @@
 */.idea/*
 */target/*
 node_modules/
-META-INF/resources/vue
+META-INF/resources/assets/webapp/
+.DS_Store

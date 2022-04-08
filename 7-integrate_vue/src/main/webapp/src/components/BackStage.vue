@@ -104,7 +104,8 @@ export default {
       fetch(url, {
         method: 'PUT',
         headers: {
-          Accept: 'application/json', 'Content-Type': 'application/json'
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
         }
       }).then(res => {
         if (res.ok) {
@@ -128,8 +129,8 @@ export default {
           return res.json()
         }
       }).then(() => {
-        if(this.articleList.length == 1 && this.currentPage  > 1){
-          this.currentPage --
+        if(this.articleList.length == 1 && this.currentPage > 1){
+          this.currentPage--
         }
         this.getArticleList(this.currentPage)
       })
@@ -140,7 +141,7 @@ export default {
     },
     previousPage: function (){
       if(this.currentPage !== 1){
-        this.currentPage = this.currentPage-1
+        this.currentPage = this.currentPage - 1
         this.getArticleList(this.currentPage)
       }
     },

@@ -1,4 +1,3 @@
-import Home from './components/Home.vue';
 import Error from './components/Error.vue';
 import BackStage from './components/BackStage.vue';
 import ArticleEdit from './components/ArticleEdit.vue';
@@ -23,12 +22,8 @@ export const routes = [
   },
   {
     path: '/',
-    component: Home
-  },
-  // {
-  //   path: '/index',
-  //   component: Home
-  // }
+    component: BackStage
+  }
 ];
 
 const router = createRouter({

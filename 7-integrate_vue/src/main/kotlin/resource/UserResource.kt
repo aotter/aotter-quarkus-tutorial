@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType
 
 @Consumes(MediaType.TEXT_HTML)
 @Produces(MediaType.TEXT_HTML)
-@Path("/rest")
+@Path("/")
 class UserResource {
 
     @Inject

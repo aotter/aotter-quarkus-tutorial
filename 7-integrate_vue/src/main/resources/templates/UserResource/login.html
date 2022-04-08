@@ -23,8 +23,8 @@
                     </li>
                 </ul>
             </div>
-            <a id="loginBtn" class="btn btn-outline-primary mr-2" href="/rest/login">登入</a>
-            <a id="signupBtn" class="btn btn-outline-primary mr-2" href="/rest/signup">註冊</a>
+            <a id="loginBtn" class="btn btn-outline-primary mr-2" href="/login">登入</a>
+            <a id="signupBtn" class="btn btn-outline-primary mr-2" href="/signup">註冊</a>
             <a id="logoutBtn" class="btn btn-outline-primary mr-2" style="color: #007bff" onclick="logout()">登出</a>
         </div>
     </nav>
@@ -45,7 +45,7 @@
         </form>
 
         <button class="btn btn-lg btn-primary btn-block mt-4" style="width: 85%; margin: auto">
-            <a style="color: white; text-decoration: none" href="/rest/signup" >註冊帳號</a>
+            <a style="color: white; text-decoration: none" href="/signup" >註冊帳號</a>
         </button>
     </div>
 
@@ -62,9 +62,9 @@
     }
 
     function logout() {
-        fetch('/api/rest/user/logout')
+        fetch('/api/user/logout')
             .then(res => {
-                if(res.ok) window.location.href = '/rest/login'
+                if(res.ok) window.location.href = '/login'
             })
     }
 </script>

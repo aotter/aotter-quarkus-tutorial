@@ -33,8 +33,8 @@
                     </li>
                 </ul>
             </div>
-            <a id="loginBtn" class="btn btn-outline-primary mr-2" href="/rest/login">登入</a>
-            <a id="signupBtn" class="btn btn-outline-primary mr-2" href="/rest/signup">註冊</a>
+            <a id="loginBtn" class="btn btn-outline-primary mr-2" href="/login">登入</a>
+            <a id="signupBtn" class="btn btn-outline-primary mr-2" href="/signup">註冊</a>
             <a id="logoutBtn" class="btn btn-outline-primary mr-2" href="#" onclick="logout()">登出</a>
         </div>
     </nav>
@@ -58,7 +58,7 @@
         <button class="btn btn-lg btn-primary btn-block" style="width: 85%; margin: auto" onclick="signUp()">註冊</button>
 
         <button class="btn btn-lg btn-primary btn-block mt-4" style="width: 85%; margin: auto">
-            <a href="/rest/login" style="color: white; text-decoration: none; ">登入</a>
+            <a href="/login" style="color: white; text-decoration: none; ">登入</a>
         </button>
     </div>
 
@@ -75,9 +75,9 @@
     }
 
     function logout() {
-        fetch('/api/rest/user/logout')
+        fetch('/api/user/logout')
             .then(res => {
-                if(res.ok) window.location.href = '/rest/login'
+                if(res.ok) window.location.href = '/login'
             })
     }
 
@@ -101,14 +101,14 @@
             'username': username,
             'password': password
         }
-        fetch('/api/rest/user/signUp',{
+        fetch('/api/user/signUp',{
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         }).then(res => {
             if(res.ok){
                 alert('註冊成功')
-                window.location.href = '/rest/login'
+                window.location.href = '/login'
             }else{
                 document.getElementById('msgIcon').style.display = null
                 document.getElementById('errMsg').innerHTML = '此名稱已註冊過'

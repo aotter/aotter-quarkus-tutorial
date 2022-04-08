@@ -15,7 +15,7 @@ import javax.ws.rs.core.*
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("api/rest/user")
+@Path("/api/user")
 class UserResource {
     @Inject
     lateinit var logger: Logger

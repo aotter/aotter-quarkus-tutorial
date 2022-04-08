@@ -25,21 +25,21 @@ export default {
   },
   methods: {
     logout(){
-        fetch('/rest/logout')
+        fetch('/logout')
         .then(res => {
             if(res.ok) this.isLogin = false
             // this.$router.push('/login');
-            location.href = "/rest/login"
+            location.href = "/login"
         })
     },
   },
   created() {
-    fetch('api/rest/user/me')
+    fetch('/api/user/me')
     .then(res =>{
       if (res.ok){
         return res.json()
       }else {
-        location.href = "/rest/login"
+        location.href = "/login"
       }
     }).then( user =>{
       this.user = user
@@ -49,8 +49,8 @@ export default {
     if(document.cookie.indexOf('quarkus-credential') !== -1){
       this.isLogin = true
     } else {
-      if(!["/","/index"].includes(this.$route.path)){
-        location.href = "/rest/login"
+      if(!["/","/back-stage"].includes(this.$route.path)){
+        location.href = "/login"
       }
     }
   }

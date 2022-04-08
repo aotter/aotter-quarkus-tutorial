@@ -10,7 +10,7 @@
           <ul class="navbar-nav me-auto mb-2 mb-md-0">
             <li v-if="isLogin === true" class="nav-item">
               <div class="nav-link active" aria-current="page">
-                <router-link to="/back-stage" style="color: whitesmoke; text-decoration: none">{{user.role === 'USER'? '個人頁' : '管理頁'}}</router-link>
+                <router-link to="/" style="color: whitesmoke; text-decoration: none">{{user.role === 'USER'? '個人頁' : '管理頁'}}</router-link>
               </div>
             </li>
             <li class="nav-item">
@@ -19,8 +19,8 @@
           </ul>
         </div>
         <div v-if="user.role" class="mr-3" style="color: whitesmoke;">{{user.role === 'USER'? '使用者' : '管理者'}} {{user.username}}，您好</div>
-        <a class="btn btn-outline-primary mr-2" v-if="isLogin === false" href="/rest/login">登入</a>
-        <a class="btn btn-outline-primary mr-2"  href="/rest/signup">註冊</a>
+        <a class="btn btn-outline-primary mr-2" v-if="isLogin === false" href="/login">登入</a>
+        <a class="btn btn-outline-primary mr-2"  href="/signup">註冊</a>
         <a class="btn btn-outline-primary mr-2" v-if="isLogin === true" @click="logout">登出</a>
       </div>
     </nav>
@@ -31,10 +31,10 @@
     props:['isLogin','user'],
     methods:{
       logout(){
-        fetch('/api/rest/user/logout')
+        fetch('/api/user/logout')
             .then(res => {
               if(res.ok)
-              window.location.href = '/rest/login'
+              window.location.href = '/login'
             })
       },
     }

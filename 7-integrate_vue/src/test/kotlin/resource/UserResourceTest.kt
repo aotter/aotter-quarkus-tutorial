@@ -16,7 +16,7 @@ class UserResourceTest {
             RestAssured.given()
                 .contentType("text/html")
                 .`when`()
-                .get("/rest/login")
+                .get("/login")
                 .then()
                 .statusCode(200)
         }
@@ -28,7 +28,7 @@ class UserResourceTest {
             RestAssured.given()
                 .contentType("text/html")
                 .`when`()
-                .get("/rest/signup")
+                .get("/signup")
                 .then()
                 .statusCode(200)
         }

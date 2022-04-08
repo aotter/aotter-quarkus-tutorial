@@ -65,7 +65,7 @@ class PublicArticleResource {
     }
 
     @GET
-    @Path("article-list")
+    @Path("/{var:article-list|}")
     suspend fun getAllArticleList(@QueryParam("author") author: String?,
                                   @QueryParam("category") category: String?,
                                   @QueryParam("page") @DefaultValue("1") page: Int,
