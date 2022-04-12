@@ -9,27 +9,27 @@ data class Article(
     /**
      *  使用者（作者） UserId
      */
-    var author: ObjectId,
+    var author: ObjectId? = null,
 
     /**
      *  使用者名稱
      */
-    var authorName: String,
+    var authorName: String? = null,
 
     /**
      *  文章分類
      */
-    var category: String,
+    var category: String? = null,
 
     /**
      *  文章標題
      */
-    var title: String,
+    var title: String? = null,
 
     /**
      *  文章內容
      */
-    var content: String,
+    var content: String? = null,
 
     /**
      *  是否已發佈
@@ -44,9 +44,9 @@ data class Article(
 
 ): BaseMongoEntity<Article>(){
 
-    constructor(author: User, req: ArticleRequest) : this(
-        author = author.id!!,
-        authorName = author.username!!,
+    constructor(user: User, req: ArticleRequest) : this(
+        author = user.id!!,
+        authorName = user.username!!,
         category = req.category!!,
         title = req.title!!,
         content = req.content?:""

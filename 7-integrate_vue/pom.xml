@@ -190,6 +190,74 @@
           </pluginOptions>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.12.1</version>
+        <configuration>
+          <workingDirectory>${project.basedir}/src/main/webapp</workingDirectory>
+          <installDirectory>target</installDirectory>
+        </configuration>
+
+        <executions>
+
+          <execution>
+            <id>install node and npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <configuration>
+              <nodeVersion>v14.17.1</nodeVersion>
+              <npmVersion>6.14.13</npmVersion>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>npm install</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <!-- Optional configuration which provides for running any npm command -->
+            <configuration>
+              <arguments>install</arguments>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>npm run build</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>npm-watch</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>npm</executable>
+              <async>true</async>
+              <arguments>
+                <argument>run</argument>
+                <argument>watch</argument>
+              </arguments>
+              <workingDirectory>${basedir}/src/main/webapp</workingDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
   <profiles>

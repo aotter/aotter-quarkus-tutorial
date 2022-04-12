@@ -43,7 +43,7 @@
       const authCookie = 'quarkus-credential';
 
       document.querySelector('#logout').addEventListener('click', async () => {
-        const res = await fetch("/rest/logout")
+        const res = await fetch("/logout")
         if(res.ok) location.reload();
       });
 
@@ -58,7 +58,7 @@
       document.querySelector('#submit').addEventListener('click', async () => {
         const username = document.querySelector('#username').value.trim()
         const password = document.querySelector('#password').value.trim()
-        const res = await fetch('/rest/signUp',{
+        const res = await fetch('/signUp',{
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify({username, password})

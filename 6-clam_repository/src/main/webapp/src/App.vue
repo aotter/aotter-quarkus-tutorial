@@ -19,7 +19,7 @@ export default {
   },
   methods: {
     logout(){
-        fetch('/rest/logout')
+        fetch('/logout')
         .then(res => {
             if(res.ok) this.isLogin = false
             this.$router.push('/login');
