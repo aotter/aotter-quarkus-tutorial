@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BLOG</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+<main role="main">
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a id='homePage' class="navbar-brand" href="">BLOG</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li id="backStage" class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/console/">返回後台</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/article-list">文章列</a>
+                    </li>
+                </ul>
+            </div>
+            <div id="userInfo" class="mr-3" style="color: whitesmoke;"></div>
+            <a id="loginBtn" class="btn btn-outline-primary mr-2" href="/login">登入</a>
+            <a id="signupBtn" class="btn btn-outline-primary mr-2" href="/signup">註冊</a>
+            <a id="logoutBtn" class="btn btn-outline-primary mr-2" style="color: #007bff" onclick="logout()">登出</a>
+        </div>
+    </nav>
+    <div class="album py-5 bg-light mt-5">
+        <div class="container">
+            <div class="blog-post">
+                <h2 class="blog-post-title">{article.title}</h2>
+                <p class="blog-post-meta">{article.lastModifiedTime} by <a href="/article-list?author={article.author}">{article.authorName}</a></p>
+
+                <p>{article.content}</p>
+                <hr>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script>
+    if(document.cookie.indexOf('quarkus-credential') === 0){
+        document.getElementById('loginBtn').style.display = 'none'
+        document.getElementById("homePage").href="/console/"
+        fetch('/api/user/me').then(res =>{
+            if (res.ok){
+                return res.json()
+            }else {
+                location.href = "/login"
+            }
+        }).then( user =>{
+            let role = ''
+            switch (user.role){
+                case 'USER':
+                    role = '使用者'
+                    break;
+                case 'ADMIN':
+                    role = '管理者'
+                    break;
+            }
+            document.getElementById('userInfo').innerHTML = role+' '+user.username+'，您好!'
+        })
+    }else {
+        document.getElementById('logoutBtn').style.display = 'none'
+        document.getElementById('backStage').style.display = 'none'
+        document.getElementById("homePage").href="/article-list"
+    }
+
+    function logout() {
+        fetch('/api/user/logout')
+            .then(res => {
+                if(res.ok) window.location.href = '/login'
+            })
+    }
+</script>
+</body>
+
+</html>
