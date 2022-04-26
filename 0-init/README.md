@@ -222,11 +222,13 @@ class GreetingResourceTest {
 
 使用 QuarkusTest runner， testHelloEndpoint method 會檢查   HTTP 回傳碼和內容，測試使用 RestAssured
 
+
+按下 r 鍵就會看到 Quarkus 自動執行測試
 ```
 Press [r] to re-run, [o] Toggle test output, [:] for the terminal, [h] for more options>
 ```
-按下 r 鍵就會看到 Quarkus 自動執行測試，然後發現測試沒有通過
 
+然後發現測試沒有通過
 ```
 2022-04-25 17:42:26,501 ERROR [io.qua.test] (Test runner thread) >>>>>>>>>>>>>>>>>>>> 1 TEST FAILED <<<<<<<<<<<<<<<<<<<<
 
