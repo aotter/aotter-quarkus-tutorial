@@ -7,3 +7,4 @@
 */target/*
 node_modules/
 src/main/resources/META-INF/resources/assets/webapp/
+.DS_Store
