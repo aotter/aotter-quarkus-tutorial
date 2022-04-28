@@ -108,7 +108,7 @@ Qute 是專為 Quarkus 設計的 Templating Engine (模板引擎)。
 ```xml
 <dependency>
     <groupId>io.quarkus</groupId>
-    <artifactId>quarkus-jdbc-postgresql</artifactId>
+    <artifactId>quarkus-resteasy-reactive-qute</artifactId>
 </dependency>
 ```
 
