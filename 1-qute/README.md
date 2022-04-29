@@ -354,6 +354,7 @@ posts.html
 * 在 posts.html include layout ，在指定覆蓋的區塊
 * meta tag 的部分，雖然每個網頁都有所以放在 layout ，但每次需要設定不同的值。
 * 創建 src/main/kotlin/net/aotter/quarkus/tutorial/model/vo/HTMLMetaData 用來紀錄 meta tag 的值
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/util/StringExtensions.kt 工具類，撰寫 abbreviate method，利用 kotlin extension method 擴充 String 方便我們省略字串
 * 修改 PostResource method 將 HTMLMetaData 傳入模板，在 layout 使用
 
 layout.html
@@ -467,6 +468,17 @@ data class HTMLMetaData(
     var image: String
 )
 ```
+
+StringExtensions.kt
+
+```kotlin
+package net.aotter.quarkus.tutorial.util
+
+fun String.abbreviate(maxWidth: Int, abbrevMarker: String = "...") = takeIf { it.length > maxWidth }
+    ?.let { "${it.take(maxWidth)}$abbrevMarker" }
+    ?: this
+```
+
 PostResource.kt
 
 ```kotlin
@@ -508,17 +520,13 @@ class PostResource {
         val url = uriInfo.baseUriBuilder
             .path(uriInfo.requestUri.path.toString())
             .build().toString()
-
-        val descriptionSummary =
-            if (description.length <= 20) description
-            else description.substring(0, 20) + "..."
-
-        return HTMLMetaData(title, type, descriptionSummary, url, image)
+        
+        return HTMLMetaData(title, type, description.abbreviate(20), url, image)
     }
 }
 ```
 * og:url 要求沒有參數的網址，所以手動去除參數
-* 考量到 description 可能太長，手動取前 20 個字
+* 考量到 description 可能太長，我們撰寫 StringExtensions 幫助我們省略超過 20 個字以後的內容
 * buildHTMLMetaData 方法與注入 UriInfo 可以考慮提到 abstract class 讓所有需要的 resource 繼承，因為這個範例只有一個 resource 使用到就不做了
 
 完成了瀏覽發布文章的頁面，接下來我們來完成發布文章詳細內容的頁面
@@ -594,11 +602,7 @@ class PostResource {
             .path(uriInfo.requestUri.path.toString())
             .build().toString()
 
-        val descriptionSummary =
-            if (description.length <= 20) description
-            else description.substring(0, 20) + "..."
-
-        return HTMLMetaData(title, type, descriptionSummary, url, image)
+        return HTMLMetaData(title, type, descriptionSummary.abbreviate(20), url, image)
     }
 }
 ```

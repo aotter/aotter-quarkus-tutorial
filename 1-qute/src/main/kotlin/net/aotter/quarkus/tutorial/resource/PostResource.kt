@@ -3,6 +3,7 @@ package net.aotter.quarkus.tutorial.resource
 import io.quarkus.qute.CheckedTemplate
 import io.quarkus.qute.TemplateInstance
 import net.aotter.quarkus.tutorial.model.vo.HTMLMetaData
+import net.aotter.quarkus.tutorial.util.abbreviate
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
@@ -50,10 +51,6 @@ class PostResource {
             .path(uriInfo.requestUri.path.toString())
             .build().toString()
 
-        val descriptionSummary =
-            if (description.length <= 20) description
-            else description.substring(0, 20) + "..."
-
-        return HTMLMetaData(title, type, descriptionSummary, url, image)
+        return HTMLMetaData(title, type, description.abbreviate(20), url, image)
     }
 }
