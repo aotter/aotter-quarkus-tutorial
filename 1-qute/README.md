@@ -241,6 +241,15 @@ bean 是一種 container-managed (受容器管理) 的物件，它提供了基�
 更詳細的介紹可以參考官方指引 [INTRODUCTION TO CONTEXTS AND DEPENDENCY INJECTION](https://quarkus.io/guides/cdi)
 
 ## Include Section
+#### Static Resource
+我們先為網站加入 favicon ，瀏覽器預設會去抓 /favicon.ico 路徑底下的圖示，  
+上一章節有提到 quarkus 會映射 src/main/resources/META-INF.resources 底下的檔案
+所以你可以直接將 favicon.ico 檔案放到 src/main/resources/META-INF.resources 即可。  
+但這邊我們使用另一種方式，在 src/main/resources/META-INF.resources 底下新增 assets 資料夾管理靜態檔案 ex 圖片、js、css  
+我們借用一下電獺官網的 [icon](https://aotter.net/assets/images/favicon.png) (請注意智慧財產權！！！)，  
+下載在 asset 底下新增 images 資料夾專門擺放網站用到的圖片，將 icon 下載後放到資料夾中，路徑長這樣 src/main/resource/META-INF.resource/assets/images/favicon.png  
+瀏覽器打開 http://localhost:8080/assets/images/favicon.png，就會看到我們剛剛放進去的 icon
+再來只要透過 <link rel="icon" href="/assets/images/favicon.png"> 指定我們 icon 路徑就好了
 
 #### 我們使用 bootstrap 來刻畫面
 
@@ -264,6 +273,8 @@ posts.html
   <meta property="og:title" content="{title}">
   <meta property="og:description" content="BLOG 有很多精彩文章">
   <meta property="og:image" content="#">
+  
+  <link rel="icon" href="/assets/images/favicon.png">  
 </head>
 <body>
 <header>
@@ -367,6 +378,7 @@ layout.html
     <meta property="og:description" content="{metaData.description}">
     <meta property="og:image" content="{metaData.image}">
 
+    <link rel="icon" href="/assets/images/favicon.png">
 </head>
 <body>
 <header>
