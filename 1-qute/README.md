@@ -19,11 +19,11 @@
 為了 SEO 需要加入 meta tag
 
 ## First Page
-* 在開始寫前我們先調整一下專案結構，將 root package 調整為 net.aotter.quarkus.tutorial 底下新增 resource package 擺放關於 JAX-RS 的 resource
+* 在開始寫前我們先調整一下專案結構，將 root package 調整為 net.aotter.quarkus.tutorial 底下創建 resource package 擺放關於 JAX-RS 的 resource
 * 前一章節的範例 GreetingResource 還有 test 因為用不到所以可以直接刪除
 * 預設的 index.html 也不用了直接刪除即可
 
-新增 PostResource.kt 在 net.aotter.quarkus.tutorial.resource 底下，此時專案結構會長的如下
+創建 PostResource.kt 在 net.aotter.quarkus.tutorial.resource 底下，此時專案結構會長的如下
 
 ```
 ├── src
@@ -113,7 +113,7 @@ Qute 是專為 Quarkus 設計的 Templating Engine (模板引擎)。
 ```
 
 默認情況下，在 src/main/resources/templates 底下的文件會被註冊為模板。  
-我們新增 templates 資料夾，並在其底下新增 posts.html，將原本寫死在 PostResource.kt 的字串移到 posts.html。  
+我們創建 templates 資料夾，並在其底下創建 posts.html，將原本寫死在 PostResource.kt 的字串移到 posts.html。  
 將 h1 tag 的內容改成 {title} ，這是一個表達式會在模板渲染時計算。
 
 src/main/resources/templates/posts.html
@@ -245,9 +245,9 @@ bean 是一種 container-managed (受容器管理) 的物件，它提供了基�
 我們先為網站加入 favicon ，瀏覽器預設會去抓 /favicon.ico 路徑底下的圖示，  
 上一章節有提到 quarkus 會映射 src/main/resources/META-INF.resources 底下的檔案
 所以你可以直接將 favicon.ico 檔案放到 src/main/resources/META-INF.resources 即可。  
-但這邊我們使用另一種方式，在 src/main/resources/META-INF.resources 底下新增 assets 資料夾管理靜態檔案 ex 圖片、js、css  
+但這邊我們使用另一種方式，在 src/main/resources/META-INF.resources 底下創建 assets 資料夾管理靜態檔案 ex 圖片、js、css  
 我們借用一下電獺官網的 [icon](https://aotter.net/assets/images/favicon.png) (請注意智慧財產權！！！)，  
-下載在 asset 底下新增 images 資料夾專門擺放網站用到的圖片，將 icon 下載後放到資料夾中，路徑長這樣 src/main/resource/META-INF.resource/assets/images/favicon.png  
+下載在 asset 底下創建 images 資料夾專門擺放網站用到的圖片，將 icon 下載後放到資料夾中，路徑長這樣 src/main/resource/META-INF.resource/assets/images/favicon.png  
 瀏覽器打開 http://localhost:8080/assets/images/favicon.png ，就會看到我們剛剛放進去的 icon
 再來只要透過 <link rel="icon" href="/assets/images/favicon.png"> 指定我們 icon 路徑就好了
 
@@ -529,23 +529,277 @@ class PostResource {
 * 考量到 description 可能太長，我們撰寫 StringExtensions 幫助我們省略超過 20 個字以後的內容
 * buildHTMLMetaData 方法與注入 UriInfo 可以考慮提到 abstract class 讓所有需要的 resource 繼承，因為這個範例只有一個 resource 使用到就不做了
 
-完成了瀏覽發布文章的頁面，接下來我們來完成發布文章詳細內容的頁面
-* 新增 src/main/resource/templates/PostResource/postDetail.html
-* 一樣 include layout ，簡單拉一下畫面
-* 在 PostResource 的 Templates 新增 postDetail 方法
-* 在 PostResource 新增方法 showPostDetail ，標註 @Path("{/id}") @GET
+## Loop Section
 
-postDetail.html
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/model/dto/Page 為泛型用來承裝分頁資訊
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/model/vo/PostSummary 用來展示文章列表的資訊
+* 修改 PostResource Template posts method 多傳入 Page<PostSummary> 讓模板渲染
+* 修改 PostResource listPost method 接收 QueryParam ，包括分頁與篩選的參數
+* 修改 post.html 使用 for loop 渲染資料
+
+Page.kt
+```kotlin
+package net.aotter.quarkus.tutorial.model.dto
+
+import kotlin.math.ceil
+
+data class Page<T>(
+    var list: List<T>,
+    var page: Long,
+    var show: Int,
+    var total: Long,
+    var totalPages: Long
+){
+    constructor(list: List<T>, page: Long, show: Int, total: Long): this(
+        list, page, show, total, ceil(total.toDouble() / show).toLong()
+    )
+}
+```
+list(資料)、page(第幾頁)、show(一頁有幾筆資料)、total(總共有幾筆資料)、totalPages(總共有幾頁)
+
+PostSummary.kt
+```kotlin
+package net.aotter.quarkus.tutorial.model.vo
+
+data class PostSummary(
+    var id: String? = null,
+    var title: String? = null,
+    var category: String? = null,
+    var authorName: String? = null,
+    var lastModifiedTime: String? = null,
+    var published: Boolean? = null
+)
+```
+
+PostResource.kt
+```kotlin
+...
+@CheckedTemplate
+object Templates{
+    @JvmStatic
+    external fun posts(metaData: HTMLMetaData, pageData: Page<PostSummary>): TemplateInstance
+    @JvmStatic
+    external fun postDetail(metaData: HTMLMetaData): TemplateInstance
+}
+
+@GET
+fun listPosts(
+    @QueryParam("category") category: String?,
+    @QueryParam("authorId") authorId: String?,
+    @QueryParam("page") @DefaultValue("1") page: Long,
+    @QueryParam("show") @DefaultValue("6") show: Int
+): TemplateInstance {
+    val metaData = buildHTMLMetaData(
+        title = "BLOG",
+        type = "website",
+        description = "BLOG 有許多好文章"
+    )
+    val postSummary = PostSummary(
+        id = "123",
+        title = "Test 1",
+        category = "類別一",
+        authorName = "user",
+        lastModifiedTime = "2022-04-06 12:01:00",
+        published = true
+    )
+    val pageData = Page(arrayListOf(postSummary, postSummary, postSummary, postSummary, postSummary, postSummary), page, show, 13)
+    return Templates.posts(metaData, pageData)
+}
+
+...
+```
+* 省略其他部分只顯示重點
+* 創建假資料用 Page 包裝，透過 posts 方法傳入到模板渲染
+
+posts.html
 ```html
-{#include layout}
-{#main}
-<main role="main" class="container">
-    <h1 class="my-5 text-center">Test title 1</h1>
-    <h5>2022-04-26 12:00:00 by <a href="#">User 1</a></h5>
-    <p>test content 1</p>
-</main>
-{/}
-{/}
+...
+<div class="row">
+    {#for item in pageData.list}
+      <div class="col-sm-12 col-lg-6 my-1">
+        <div class="card">
+          <div class="card-body">
+            <p>
+              <a class="my-5" href="/?category={item.category}">{item.category}</a>
+            </p>
+            <h5 class="card-title">{item.title}</h5>
+            <p class="card-text">最後修改時間：{item.lastModifiedTime}</p>
+            <p class="text-right mb-0">
+              <a href="/posts/{item.id}" >閱讀更多</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    {/for}
+</div>
+...
+```
+* 省略其他部分，只顯示重點
+* loop section 可以遍歷 Iterable、Iterator、array、Map、Stream、Integer、int
+* 有兩種方式使用，一種是只用 each 和 it，另一種是使用 for 別名 in iteration
+* 我們這邊使用 for ，別名為 item ，遍歷 Page<PostSummary> 的 list
+* 可以在 loop section 參考到個別物件
+* 另外可透過 ＿訪問 iteration metadata, ex item_index 可以拿到以零為基礎遍歷的指標
+
+## Template Extension Methods
+
+再來我們要完成下面的頁碼，這部分比較複雜，要考慮到換頁時應該要攜帶原本的參數，還要判斷前一頁後一頁。  
+首先我們要知道在模板中只有表達式，所以連簡單的計算也無法 ex {1+1} 模板會解析錯誤，那如果我們想要做簡單的計算最後在呈現出來該怎麼辦呢  
+就可以透過 Template Extension Methods 達成
+* 當在方法上使用 @TemplateExtension 標註，會自動產生 ValueResolver，若是標註在 class 上則所有符合的方法都會自動產生
+* template extension method 不能為 private 、 必須為 static 、 回傳值不得為 void
+* 沒有定義 namespace 會使用沒有標註 @TemplateAttribute 第一個參數作為匹配
+
+Qute 有內建一些 Template Extensions ex Number 有 mod {#if counter.mod(5) == 0}  
+我們先來建立一些 Template Extension Methods，方便等等使用
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/util/template/BasicExtensions.kt
+* 在 BasicExtension 創建 static method inc 用來對 Number 的簡單加法
+* 在 BasicExtension 創建 static method paginationList 用來產生等等要顯示的頁碼
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/util/template/RouteExtensions.kt
+* 在 RouteExtensions 創建 static method toRouteBuilder 從 HttpServerRequest 取出 absoluteURI 轉成 UriBuilder 用來建構網址
+* 在 RouteExtensions 創建 static method setRouteQueryParam 設定 UriBuilder 的 QueryParam
+
+BasicExtensions.kt
+```kotlin
+package net.aotter.quarkus.tutorial.util.template
+
+import io.quarkus.qute.TemplateExtension
+import kotlin.math.max
+import kotlin.math.min
+
+@TemplateExtension
+class BasicExtensions {
+    companion object{
+        @JvmStatic
+        fun inc(number: Number, amount: Number): Long = number.toLong() + amount.toLong()
+
+        @JvmStatic
+        fun paginationList(currentPage: Number, totalPages: Number, elements: Int): List<Long>{
+            val half: Int = Math.floorDiv(elements - 1 , 2)
+            val leftMinus: Int = if(elements % 2 == 0) 1 else 0
+            var left = (currentPage.toInt() - half - leftMinus).toLong()
+            var right = (currentPage.toInt() + half).toLong()
+            if(left < 1){
+                right = min(totalPages.toLong(), right + (1L - left))
+                left = 1
+            }else if(right > totalPages.toLong()){
+                left = max(1, left - (right - totalPages.toLong()))
+                right = totalPages.toLong()
+            }
+            return listOf(left..right).flatten()
+        }
+    }
+}
+```
+* 一樣使用 companion object @JvmStatic 來撰寫 static method 
+* 由於沒有指定 namespace 所以 inc 方法和 paginationList 方法都會使用第一個參數來匹配
+* inc 匹配表達式 Number.class 然後屬性為 inc ex {count.inc(1)}
+* paginationList 是用來計算需要顯示的頁碼，currentPage(第幾頁)、totalPages(總共幾頁)、elements(最多顯示幾個頁碼)
+
+RouteExtensions.kt
+```kotlin
+package net.aotter.quarkus.tutorial.util.template
+
+import io.quarkus.qute.TemplateExtension
+import io.vertx.core.http.HttpServerRequest
+import javax.ws.rs.core.UriBuilder
+
+@TemplateExtension
+class RouteExtensions {
+    companion object{
+        @JvmStatic
+        fun toRouteBuilder(request: HttpServerRequest): UriBuilder = UriBuilder.fromUri(request.absoluteURI())
+        @JvmStatic
+        fun setRouteQueryParam(builder: UriBuilder, name: String, value: Any): UriBuilder  {
+            return  builder.replaceQueryParam(name, value)
+        }
+    }
+}
+```
+* 利用 qute inject 可以取得 HttpServerRequest 之後在模板可以使用
+* 為了換頁還要保留其他 QueryParam ，我們使用 UriBuilder 方便取代 page 參數
+
+#### 最後修改我們的 post.html
+
+```html
+...
+<nav class="my-5">
+    {#if pageData.totalPages > 1}
+    <ul class="pagination justify-content-center">
+
+        {#if pageData.page > 1}
+        <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', pageData.page.inc(-1)).toTemplate()}">&laquo; 前一頁</a></li>
+        {#else}
+        <li class="page-item disabled"><a class="page-link" href="#">&laquo; 前一頁</a></li>
+        {/if}
+
+        {#for i in pageData.page.paginationList(pageData.totalPages,5)}
+
+        {#if (i_index == 0) && (i > 1)}
+        <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', 1).toTemplate()}">1</a></li>
+        {/if}
+
+        {#if (i_index == 0) && (i > 2)}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {/if}
+
+        <li class="page-item {#if pageData.page == i}active{/if}"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', i).toTemplate()}">{i}</a></li>
+
+        {#if (!i_hasNext) && (i < (pageData.totalPages.inc(-1)))}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {/if}
+
+        {#if (!i_hasNext) && (i < pageData.totalPages)}
+        <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', pageData.totalPages).toTemplate()}">{pageData.totalPages}</a></li>
+        {/if}
+
+        {/for}
+
+        {#if pageData.page < pageData.totalPages}
+        <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', pageData.page.inc(1)).toTemplate()}">後一頁 &raquo;</a></li>
+        {#else}
+        <li class="page-item disabled"><a class="page-link" href="#">後一頁 &raquo;</a></li>
+        {/if}
+
+    </ul>
+
+    {#else}
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled"><a class="page-link" href="#">&laquo; 前一頁</a></li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item disabled"><a class="page-link" href="#">後一頁 &raquo;</a></li>
+    </ul>
+    {/if}
+</nav>
+...
+```
+* 一開始判斷只有一頁的話直接顯示
+* {inject:vertxRequest} 可以取得 HttpServerRequest 再搭配我們的 toRouteBuilder() 設定網址，最後呼叫 toTemplate() 得到網址
+* 使用 paginationList 搭配 for loop 渲染頁碼
+* 使用 i_index 取得 for 的索引用來判斷要不要顯示首頁和略過符號
+* !i_hasNext 也是一樣的道理，用來判斷要不要顯示末頁和略過符號
+
+
+
+完成了瀏覽發布文章的頁面，接下來我們來完成發布文章詳細內容的頁面，這方便比較簡單就只是呈現資料而已
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/model/vo/PostDetail.kt 用來呈現發布文章詳細內容頁面
+* 在 PostResource 的 Templates 新增 postDetail 方法傳入 metaData 和 postDetail
+* 在 PostResource 新增方法 showPostDetail ，標註 @Path("{/id}") @GET
+* 創建 src/main/resources/templates/PostResource/postDetail.html
+* 一樣 include layout ，簡單拉一下畫面，將 postDetail 資訊呈現出來
+
+PostDetail.kt
+```kotlin
+package net.aotter.quarkus.tutorial.model.vo
+
+data class PostDetail(
+    var category: String? = null,
+    var title: String? = null,
+    var content: String? = null,
+    var authorId: String? = null,
+    var authorName: String? = null,
+    var lastModifiedTime: String? = null
+)
 ```
 
 PostResource.kt
@@ -554,10 +808,17 @@ package net.aotter.quarkus.tutorial.resource
 
 import io.quarkus.qute.CheckedTemplate
 import io.quarkus.qute.TemplateInstance
+import io.vertx.core.http.HttpServerRequest
+import net.aotter.quarkus.tutorial.model.dto.Page
 import net.aotter.quarkus.tutorial.model.vo.HTMLMetaData
+import net.aotter.quarkus.tutorial.model.vo.PostDetail
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.util.abbreviate
+import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.UriInfo
@@ -571,19 +832,35 @@ class PostResource {
     @CheckedTemplate
     object Templates{
         @JvmStatic
-        external fun posts(metaData: HTMLMetaData): TemplateInstance
+        external fun posts(metaData: HTMLMetaData, pageData: Page<PostSummary>): TemplateInstance
         @JvmStatic
-        external fun postDetail(metaData: HTMLMetaData): TemplateInstance
+        external fun postDetail(metaData: HTMLMetaData, postDetail: PostDetail): TemplateInstance
     }
 
     @GET
-    fun listPosts(): TemplateInstance {
+    fun listPosts(
+        request: HttpServerRequest,
+
+        @QueryParam("category") category: String?,
+        @QueryParam("authorId") authorId: String?,
+        @QueryParam("page") @DefaultValue("1") page: Long,
+        @QueryParam("show") @DefaultValue("6") show: Int
+    ): TemplateInstance {
         val metaData = buildHTMLMetaData(
             title = "BLOG",
             type = "website",
             description = "BLOG 有許多好文章"
         )
-        return Templates.posts(metaData)
+        val postSummary = PostSummary(
+            id = "123",
+            title = "Test 1",
+            category = "類別一",
+            authorName = "user",
+            lastModifiedTime = "2022-04-06 12:01:00",
+            published = true
+        )
+        val pageData = Page(arrayListOf(postSummary, postSummary, postSummary, postSummary, postSummary, postSummary), page, show, 100)
+        return Templates.posts(metaData, pageData)
     }
 
     @Path("/posts/{postId}")
@@ -594,21 +871,40 @@ class PostResource {
             type = "article",
             description = "Test content 1"
         )
-        return Templates.postDetail(metaData)
+        val postDetail = PostDetail(
+            category = "類別一",
+            title = "Test 1",
+            content = "test content",
+            authorId = "user",
+            authorName = "user",
+            lastModifiedTime = "2022-04-06 12:01:00"
+        )
+        return Templates.postDetail(metaData, postDetail)
     }
 
     private fun buildHTMLMetaData(title: String, type: String, description: String, image: String = ""): HTMLMetaData{
-        val url = uriInfo.baseUriBuilder
-            .path(uriInfo.requestUri.path.toString())
-            .build().toString()
-
-        return HTMLMetaData(title, type, descriptionSummary.abbreviate(20), url, image)
+        val url = uriInfo.baseUriBuilder.replaceQuery("").toTemplate()
+        return HTMLMetaData(title, type, description.abbreviate(20), url, image)
     }
 }
 ```
+
+postDetail.html
+```html
+{#include layout}
+{#main}
+<main role="main" class="container">
+    <h1 class="my-5 text-center">{postDetail.title}</h1>
+    <h5>{postDetail.lastModifiedTime} by <a href="/?authorId={postDetail.authorId}">{postDetail.authorName}</a></h5>
+    <p>{postDetail.content}</p>
+</main>
+{/}
+{/}
+```
+
 完成後使用瀏覽器訪問 http://localhost:8080/posts/123 ，postId先隨便打只是要看畫面
-
 ![postDetail 畫面](../image/1-qute/postDetail.png)
+可以點選超連結會發現兩邊的頁面已經連結好了，我們就完成了畫面的製作
 
-qute 還有許多語法像是 if 、 for 之類的這裡就先不介紹，之後有用到會再稍微描述。
-更詳細的介紹可以參考官方指引 [QUTE REFERENCE GUIDE](https://quarkus.io/guides/qute-reference)
+
+qute 還有許多功能更詳細的介紹可以參考官方指引 [QUTE REFERENCE GUIDE](https://quarkus.io/guides/qute-reference)

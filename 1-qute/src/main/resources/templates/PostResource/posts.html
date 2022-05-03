@@ -3,42 +3,72 @@
 <main role="main" class="container">
   <h1 class="my-5 text-center">文章列表</h1>
   <div class="row">
-    <div class="col-sm-12 col-lg-6 my-1">
-      <div class="card">
-        <div class="card-body">
-          <p>
-            <a class="my-5" href="#">類別一</a>
-          </p>
-          <h5 class="card-title">Test Title 1</h5>
-          <p class="card-text">最後修改時間：2022-04-26 12:00:00</p>
-          <p class="text-right mb-0">
-            <a href="#" >閱讀更多</a>
-          </p>
+    {#for item in pageData.list}
+      <div class="col-sm-12 col-lg-6 my-1">
+        <div class="card">
+          <div class="card-body">
+            <p>
+              <a class="my-5" href="/?category={item.category}">{item.category}</a>
+            </p>
+            <h5 class="card-title">{item.title}</h5>
+            <p class="card-text">最後修改時間：{item.lastModifiedTime}</p>
+            <p class="text-right mb-0">
+              <a href="/posts/{item.id}" >閱讀更多</a>
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="col-sm-12 col-lg-6 my-1">
-      <div class="card">
-        <div class="card-body">
-          <p>
-            <a class="my-5" href="#">類別二</a>
-          </p>
-          <h5 class="card-title">Test Title 2</h5>
-          <p class="card-text">最後修改時間：2022-04-26 12:00:00</p>
-          <p class="text-right mb-0">
-            <a href="#" >閱讀更多</a>
-          </p>
-        </div>
-      </div>
-    </div>
+    {/for}
   </div>
   <nav class="my-5">
-    <ul class="pagination justify-content-center">
-      <li class="page-item disabled"><a class="page-link" href="#">&laquo; 前一頁</a></li>
-      <li class="page-item active"><a class="page-link" href="#">1</a></li>
-      <li class="page-item disabled"><a class="page-link" href="#">後一頁 &raquo;</a></li>
-    </ul>
+    {#if pageData.totalPages > 1}
+      <ul class="pagination justify-content-center">
+
+        {#if pageData.page > 1}
+          <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', pageData.page.inc(-1)).toTemplate()}">&laquo; 前一頁</a></li>
+        {#else}
+          <li class="page-item disabled"><a class="page-link" href="#">&laquo; 前一頁</a></li>
+        {/if}
+
+        {#for i in pageData.page.paginationList(pageData.totalPages,5)}
+
+          {#if (i_index == 0) && (i > 1)}
+            <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', 1).toTemplate()}">1</a></li>
+          {/if}
+
+          {#if (i_index == 0) && (i > 2)}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {/if}
+
+          <li class="page-item {#if pageData.page == i}active{/if}"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', i).toTemplate()}">{i}</a></li>
+
+          {#if (!i_hasNext) && (i < (pageData.totalPages.inc(-1)))}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {/if}
+
+          {#if (!i_hasNext) && (i < pageData.totalPages)}
+            <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', pageData.totalPages).toTemplate()}">{pageData.totalPages}</a></li>
+          {/if}
+
+        {/for}
+
+        {#if pageData.page < pageData.totalPages}
+          <li class="page-item"><a class="page-link" href="{inject:vertxRequest.toRouteBuilder().setRouteQueryParam('page', pageData.page.inc(1)).toTemplate()}">後一頁 &raquo;</a></li>
+        {#else}
+          <li class="page-item disabled"><a class="page-link" href="#">後一頁 &raquo;</a></li>
+        {/if}
+
+      </ul>
+
+    {#else}
+      <ul class="pagination justify-content-center">
+        <li class="page-item disabled"><a class="page-link" href="#">&laquo; 前一頁</a></li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item disabled"><a class="page-link" href="#">後一頁 &raquo;</a></li>
+      </ul>
+    {/if}
   </nav>
 </main>
+
 {/main}
 {/include}
