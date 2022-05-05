@@ -1,10 +1,10 @@
 package net.aotter.quarkus.tutorial.model.vo
 
 data class PostSummary(
-    var id: String? = null,
-    var title: String? = null,
-    var category: String? = null,
-    var authorName: String? = null,
-    var lastModifiedTime: String? = null,
-    var published: Boolean? = null
+    var id: String,
+    var title: String,
+    var category: String,
+    var authorName: String,
+    var lastModifiedTime: String,
+    var published: Boolean
 )

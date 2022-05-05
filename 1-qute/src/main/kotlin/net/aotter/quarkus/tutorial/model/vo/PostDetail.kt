@@ -1,10 +1,10 @@
 package net.aotter.quarkus.tutorial.model.vo
 
 data class PostDetail(
-    var category: String? = null,
-    var title: String? = null,
+    var category: String,
+    var title: String,
     var content: String? = null,
-    var authorId: String? = null,
-    var authorName: String? = null,
-    var lastModifiedTime: String? = null
+    var authorId: String,
+    var authorName: String,
+    var lastModifiedTime: String
 )

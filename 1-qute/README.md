@@ -562,12 +562,12 @@ PostSummary.kt
 package net.aotter.quarkus.tutorial.model.vo
 
 data class PostSummary(
-    var id: String? = null,
-    var title: String? = null,
-    var category: String? = null,
-    var authorName: String? = null,
-    var lastModifiedTime: String? = null,
-    var published: Boolean? = null
+    var id: String,
+    var title: String,
+    var category: String,
+    var authorName: String,
+    var lastModifiedTime: String,
+    var published: Boolean
 )
 ```
 
@@ -602,7 +602,7 @@ fun listPosts(
         lastModifiedTime = "2022-04-06 12:01:00",
         published = true
     )
-    val pageData = Page(arrayListOf(postSummary, postSummary, postSummary, postSummary, postSummary, postSummary), page, show, 13)
+    val pageData = Page(arrayListOf(postSummary, postSummary, postSummary, postSummary, postSummary, postSummary), page, show, 100)
     return Templates.posts(metaData, pageData)
 }
 
@@ -793,12 +793,12 @@ PostDetail.kt
 package net.aotter.quarkus.tutorial.model.vo
 
 data class PostDetail(
-    var category: String? = null,
-    var title: String? = null,
+    var category: String,
+    var title: String,
     var content: String? = null,
-    var authorId: String? = null,
-    var authorName: String? = null,
-    var lastModifiedTime: String? = null
+    var authorId: String,
+    var authorName: String,
+    var lastModifiedTime: String
 )
 ```
 
