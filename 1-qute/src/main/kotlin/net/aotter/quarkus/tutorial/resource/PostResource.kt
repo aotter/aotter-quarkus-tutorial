@@ -3,7 +3,7 @@ package net.aotter.quarkus.tutorial.resource
 import io.quarkus.qute.CheckedTemplate
 import io.quarkus.qute.TemplateInstance
 import io.vertx.core.http.HttpServerRequest
-import net.aotter.quarkus.tutorial.model.dto.Page
+import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.vo.HTMLMetaData
 import net.aotter.quarkus.tutorial.model.vo.PostDetail
 import net.aotter.quarkus.tutorial.model.vo.PostSummary
@@ -26,7 +26,7 @@ class PostResource {
     @CheckedTemplate
     object Templates{
         @JvmStatic
-        external fun posts(metaData: HTMLMetaData, pageData: Page<PostSummary>): TemplateInstance
+        external fun posts(metaData: HTMLMetaData, pageData: PageData<PostSummary>): TemplateInstance
         @JvmStatic
         external fun postDetail(metaData: HTMLMetaData, postDetail: PostDetail): TemplateInstance
     }
@@ -53,7 +53,7 @@ class PostResource {
             lastModifiedTime = "2022-04-06 12:01:00",
             published = true
         )
-        val pageData = Page(arrayListOf(postSummary, postSummary, postSummary, postSummary, postSummary, postSummary), page, show, 100)
+        val pageData = PageData(arrayListOf(postSummary, postSummary, postSummary, postSummary, postSummary, postSummary), page, show, 100)
         return Templates.posts(metaData, pageData)
     }
 

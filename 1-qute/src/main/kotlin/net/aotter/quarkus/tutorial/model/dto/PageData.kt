@@ -2,7 +2,7 @@ package net.aotter.quarkus.tutorial.model.dto
 
 import kotlin.math.ceil
 
-data class Page<T>(
+data class PageData<T>(
     var list: List<T>,
     var page: Long,
     var show: Int,
