@@ -1,0 +1,9 @@
+{#include layout}
+{#main}
+<main role="main" class="container">
+    <h1 class="my-5 text-center">{postDetail.title}</h1>
+    <h5>{postDetail.lastModifiedTime} by <a href="/?authorId={postDetail.authorId}">{postDetail.authorName}</a></h5>
+    <p>{postDetail.content}</p>
+</main>
+{/}
+{/}
