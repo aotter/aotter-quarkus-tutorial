@@ -236,6 +236,8 @@ Quarkus 的架構基於非阻塞 I/O 和消息傳遞，允許支援多種響應�
 Mutiny 是一個事件驅動的響應式程式設計函式庫，使用它可以撰寫事件驅動的程式碼，你的程式碼是接受事件和處理的管道，管道中每個階段都可以看作是一個執行續體，因為他會在上游發出事件時調用。  
 Coroutines 是一種順序式撰寫異步程式碼的方法，他在 I/O 期間暫停程式碼的執行，並將剩餘程式碼註冊為執行續體。
 
+可以參考官方指引 [GETTING STARTED WITH REACTIVE](https://quarkus.io/guides/getting-started-reactive)
+
 ## 查詢文章
 
 我們接下來在 PostRepository 實作查詢文章分頁的功能
@@ -243,8 +245,6 @@ Coroutines 是一種順序式撰寫異步程式碼的方法，他在 I/O 期間�
 * 為了實作分頁，我們需要 count 總共有幾筆資料，還有透過 find 得到 ReactivePanacheQuery 實作分頁
 * 在 PostRepository 實作 countByCriteria、findByCriteria、pageDataByCriteria
 * 由於我們的搜尋條件不定所以透過 Map 裝載條件參數，在使用 buildQuery 產生 PanacheQL
-
-可以參考官方指引 [GETTING STARTED WITH REACTIVE](https://quarkus.io/guides/getting-started-reactive)
 
 PostRepository.kt
 ```kotlin
