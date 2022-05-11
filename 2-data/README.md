@@ -340,7 +340,7 @@ class PostService {
     @Inject
     lateinit var postRepository: PostRepository
 
-    fun getExistedPostPageData(authorIdValue: String?, category: String?, published: Boolean? , page: Long, show: Int): Uni<PageData<PostSummary>> {
+    fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean? , page: Long, show: Int): Uni<PageData<PostSummary>> {
         val criteria = HashMap<String, Any>().apply {
             put(Post::deleted.name, false)
             authorIdValue?.let {
@@ -392,8 +392,8 @@ PostResource.kt
             type = "website",
             description = "BLOG 有許多好文章"
         )
-        return postService.getExistedPostPageData(authorId, category, true, page, show)
-            .map{ item -> Templates.posts(metaData, item) }
+        return postService.getExistedPostSummary(authorId, category, true, page, show)
+            .map{ pageData -> Templates.posts(metaData, pageData) }
     }
 ...
 ```
@@ -486,3 +486,268 @@ class AppInitConfig{
 * 注意 Mutiny 是惰性的，在沒有訂閱時是不會執行的，所以最後要使用 subscribe().with{}
 
 這樣就完成了初始資料的新增，再次使用瀏覽器訪問 http://localhost:8080 ,就會看到精美的七筆資料顯示出來
+
+## Coroutines with kotlin
+
+#### No-arg compiler plugin
+前面有提到 data class 要產生無參數建構子需要給予所有屬性預設值，而 No-arg compiler plugin 可以幫助我們對標註特定 annotation 的類別額外生成無參數建構子。  
+再來我們看向 Post 的 createdTime 和 lastModifiedTime 應該是可以提出來作為抽象類別讓其他需要的 po 繼承，而 PostRepository 的方法也是可以抽象出來讓其他 repository 繼承。
+
+* pom.xml 的 kotlin-maven-plugin 加入 dependency kotlin-maven-noarg、compilerPlugins 加上 plugin no-arg 、option 加上 no-arg:annotation=io.quarkus.mongodb.panache.common.MongoEntity
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/model/po/AuditingEntity 
+* 將 createdTime 和 lastModifiedTime 提到 AuditingEntity，新增方法 beforePersistOrUpdate 處理設定 lastModifiedTime
+* 修改 Post 繼承 AuditingEntity 拿到提出的欄位，加上 @MongoEntity 讓 plugin 可以產生無參數建構子，可以不需要設定預設值
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/repository/AuditingRepository 
+* 將原本的方法提到 AuditingRepository 抽象類別，這次我們改為直接複寫所有使用 Entity 的儲存或更新方法
+* 修改 PostRepository 繼承 AuditingRepository
+* 修改 AppInitConfig 直接使用 persistOrUpdate 方法
+
+pom.xml
+```xml
+...
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <version>${kotlin.version}</version>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <goals>
+              <goal>test-compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-allopen</artifactId>
+            <version>${kotlin.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-noarg</artifactId>
+            <version>${kotlin.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <javaParameters>true</javaParameters>
+          <jvmTarget>11</jvmTarget>
+          <compilerPlugins>
+            <plugin>all-open</plugin>
+            <plugin>no-arg</plugin>
+          </compilerPlugins>
+          <pluginOptions>
+            <option>all-open:annotation=javax.ws.rs.Path</option>
+            <option>all-open:annotation=javax.enterprise.context.ApplicationScoped</option>
+            <option>all-open:annotation=io.quarkus.test.junit.QuarkusTest</option>
+            <option>no-arg:annotation=io.quarkus.mongodb.panache.common.MongoEntity</option>
+          </pluginOptions>
+        </configuration>
+      </plugin>
+...
+```
+* 加入 dependency kotlin-maven-noarg
+* compilerPlugins 加入 plugin no-arg
+* pluginOptions 加入 option no-arg:annotation=io.quarkus.mongodb.panache.common.MongoEntity 表示帶有這個 annotation 的類別都會透過 no-arg plugin 產生無參數建構子
+
+AuditingEntity.kt
+```kotlin
+package net.aotter.quarkus.tutorial.model.po
+
+import java.time.Instant
+
+abstract class AuditingEntity {
+ var lastModifiedTime: Instant? = null
+ var createdTime: Instant = Instant.now()
+ 
+ fun beforePersistOrUpdate() = (this.lastModifiedTime?.let { Instant.now() } ?: this.createdTime).also { this.lastModifiedTime = it }
+}
+```
+* 創建抽象類別用來記錄稽核用資訊
+* 創建 beforePersistOrUpdate 方法在儲存到資料庫前更新 lastModifiedTime
+
+Post.kt
+```kotlin
+package net.aotter.quarkus.tutorial.model.po
+
+import io.quarkus.mongodb.panache.common.MongoEntity
+import org.bson.types.ObjectId
+
+@MongoEntity
+data class Post(
+    var id: ObjectId? = null,
+    var authorId: ObjectId,
+    var authorName: String,
+    var category: String,
+    var title: String,
+    var content: String,
+    var published: Boolean,
+    var deleted: Boolean,
+): AuditingEntity()
+```
+* 修改 Post 繼承 AuditingEntity
+* 加上 @MongoEntity 標註讓 no-arg plugin 產生無參數建構子
+* 不需要所有欄位都設定預設值
+
+AuditingRepository.kt
+```kotlin
+package net.aotter.quarkus.tutorial.repository
+
+import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheMongoRepository
+import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheQuery
+import io.quarkus.panache.common.Sort
+import io.smallrye.mutiny.Uni
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.po.AuditingEntity
+import java.util.stream.Stream
+
+abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoRepository<Entity>{
+
+ override fun persist(entity: Entity): Uni<Entity> {
+  entity.beforePersistOrUpdate()
+  return super.persist(entity)
+ }
+
+ override fun persist(firstEntity: Entity, vararg entities: Entity): Uni<Void> {
+  firstEntity.beforePersistOrUpdate()
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.persist(firstEntity, *entities)
+ }
+
+ override fun persist(entities: Stream<Entity>): Uni<Void> {
+  entities.forEach{ it.beforePersistOrUpdate() }
+  return super.persist(entities)
+ }
+
+ override fun persist(entities: Iterable<Entity>): Uni<Void> {
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.persist(entities)
+ }
+
+ override fun update(entity: Entity): Uni<Entity> {
+  entity.beforePersistOrUpdate()
+  return super.update(entity)
+ }
+
+ override fun update(firstEntity: Entity, vararg entities: Entity): Uni<Void> {
+  firstEntity.beforePersistOrUpdate()
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.update(firstEntity, *entities)
+ }
+
+ override fun update(entities: Stream<Entity>): Uni<Void> {
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.update(entities)
+ }
+
+ override fun update(entities: Iterable<Entity>): Uni<Void> {
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.update(entities)
+ }
+
+
+ override fun persistOrUpdate(entity: Entity): Uni<Entity> {
+  entity.beforePersistOrUpdate()
+  return super.persistOrUpdate(entity)
+ }
+
+ override fun persistOrUpdate(firstEntity: Entity, vararg entities: Entity): Uni<Void> {
+  firstEntity.beforePersistOrUpdate()
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.persistOrUpdate(firstEntity, *entities)
+ }
+
+ override fun persistOrUpdate(entities: Stream<Entity>): Uni<Void> {
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.persistOrUpdate(entities)
+ }
+
+ override fun persistOrUpdate(entities: Iterable<Entity>): Uni<Void> {
+  entities.forEach { it.beforePersistOrUpdate() }
+  return super.persistOrUpdate(entities)
+ }
+
+ fun countByCriteria(criteria: Map<String, Any>): Uni<Long> =
+  if(criteria.isEmpty())
+   count()
+  else
+   count(buildQuery(criteria), criteria)
+
+ fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id")): ReactivePanacheQuery<Entity> =
+  if(criteria.isEmpty())
+   findAll(sort)
+  else
+   find(buildQuery(criteria), criteria)
+
+ fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id"), page: Long, show: Int): Uni<PageData<Entity>>{
+  val total = countByCriteria(criteria)
+  val list = findByCriteria(criteria, sort).page(page.toInt() - 1, show).list()
+
+  return Uni.combine().all().unis(total, list).asTuple()
+   .map { PageData(it.item2, page, show, it.item1) }
+ }
+
+ private fun buildQuery(criteria: Map<String, Any>): String = criteria.keys.joinToString(separator = " and ") { """$it = :$it""" }
+}
+```
+* 創建抽象類別繼承 ReactivePanacheMongoRepository 
+* 將原本的方法搬到抽象類別上
+* 放棄原本的 persistOrUpdateWithAuditing 方法，這樣無法確保使用的人呼叫正確的方法，lastModifiedTime 就不會正確更新
+* 改由複寫 ReactivePanacheMongoRepository 關於 entity 的 persist Or update 方法，在保存前調用 beforePersistOrUpdate
+* 如果是直接呼叫 update(update: kotlin.String, params: io.quarkus.panache.common.Parameters) 等 Query 還是會發生 lastModifiedTime 需要要手動更新情形
+
+PostRepository.kt
+```kotlin
+package net.aotter.quarkus.tutorial.repository
+
+import net.aotter.quarkus.tutorial.model.po.Post
+import javax.enterprise.context.ApplicationScoped
+
+@ApplicationScoped
+class PostRepository: AuditingRepository<Post>(){
+}
+
+```
+
+AppInitConfig.kt
+```kotlin
+...
+    private fun initPostData(){
+        val posts = mutableListOf<Post>()
+        for(index in 1..7){
+            val post = Post(
+                authorId = ObjectId("6278b21b245917288cd7220b"),
+                authorName = "user",
+                title = """Title $index""",
+                category = "分類一",
+                content = """Content $index""",
+                published = true,
+                deleted = false
+            )
+            posts.add(post)
+        }
+        postRepository.count()
+            .subscribe().with{
+                if(it == 0L){
+                    postRepository.persistOrUpdate(posts)
+                        .onItemOrFailure()
+                        .transform{ _, t ->
+                            if(t != null){
+                                logger.error("insert failed")
+                            }else{
+                                logger.info("""insert successful""")
+                            }
+                        }.subscribe().with{ /*ignore*/ }
+                }
+            }
+    }
+...
+```
+改為直接調用 persistOrUpdate 方法 
+

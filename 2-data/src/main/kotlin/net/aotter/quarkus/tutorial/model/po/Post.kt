@@ -1,17 +1,21 @@
 package net.aotter.quarkus.tutorial.model.po
 
+import io.quarkus.mongodb.panache.common.MongoEntity
+import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
-import java.time.Instant
 
-data class Post (
+@MongoEntity
+data class Post(
+    @field:[
+        BsonProperty("_id")
+    ]
     var id: ObjectId? = null,
-    var authorId: ObjectId? = null,
-    var authorName: String? = null,
-    var category: String? = null,
-    var title: String? = null,
-    var content: String? = null,
-    var published: Boolean? = null,
-    var deleted: Boolean? = null,
-    var lastModifiedTime: Instant? = null,
-    var createdTime: Instant = Instant.now()
-)
+    var authorId: ObjectId,
+    var authorName: String,
+    var category: String,
+    var title: String,
+    var content: String,
+    var published: Boolean,
+    var deleted: Boolean,
+): AuditingEntity()

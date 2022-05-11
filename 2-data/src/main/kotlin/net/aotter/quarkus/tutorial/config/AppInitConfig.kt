@@ -18,7 +18,7 @@ class AppInitConfig{
     lateinit var logger: Logger
 
     @PostConstruct
-    fun onStart() {
+     fun onStart() {
         initPostData()
     }
 
@@ -39,7 +39,7 @@ class AppInitConfig{
         postRepository.count()
             .subscribe().with{
                 if(it == 0L){
-                    postRepository.persistOrUpdateWithAuditing(posts)
+                    postRepository.persistOrUpdate(posts)
                         .onItemOrFailure()
                         .transform{ _, t ->
                             if(t != null){
