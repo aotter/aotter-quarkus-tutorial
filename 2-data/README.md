@@ -93,6 +93,9 @@ import org.bson.types.ObjectId
 import java.time.Instant
 
 data class Post (
+    @field:[
+        BsonProperty("_id")
+    ]
     var id: ObjectId? = null,
     var authorId: ObjectId? = null,
     var authorName: String? = null,
@@ -105,7 +108,8 @@ data class Post (
     var createdTime: Instant = Instant.now()
 )
 ```
-使用 data class 作為 po, 因為 PojoCodecProvider 需要無參數建構子，而 data class 要產生無參數建構子需要給予所有屬性預設值
+* 使用 data class 作為 po, 因為 PojoCodecProvider 需要無參數建構子，而 data class 要產生無參數建構子需要給予所有屬性預設值
+* 因為 PanacheQL 轉換 id 不會自動轉換成 ＿id (不確定是否為 bug)，暫時的解法是標註 BsonProperty 轉換就會正常
 
 PostRepository.kt
 ```kotlin
@@ -376,6 +380,8 @@ class PostService {
 ```
 * 由於我們要達到動態條件查詢，所以對於沒有設定的篩選條件就不放進 criteria Map
 * 查詢回來的 Uni<Post&gt; 使用 Mutiny map 轉換為 Uni<PostSummary&gt;
+* 因為是還存在的文章，所以 delete 為 false
+* 想要顯示最新更新的文章，所以用 lastModifiedTime 降冪排序
 
 PostResource.kt
 ```kotlin
@@ -487,6 +493,8 @@ class AppInitConfig{
 
 這樣就完成了初始資料的新增，再次使用瀏覽器訪問 http://localhost:8080 ,就會看到精美的七筆資料顯示出來
 
+管於 Mutiny 詳細語法與用法可以參考官方網站 [SmallRye Mutiny](https://smallrye.io/smallrye-mutiny/)
+
 ## Coroutines with kotlin
 
 #### No-arg compiler plugin
@@ -581,6 +589,9 @@ import org.bson.types.ObjectId
 
 @MongoEntity
 data class Post(
+    @field:[
+        BsonProperty("_id")
+    ]
     var id: ObjectId? = null,
     var authorId: ObjectId,
     var authorName: String,
@@ -751,3 +762,213 @@ AppInitConfig.kt
 ```
 改為直接調用 persistOrUpdate 方法 
 
+#### Kotlin Coroutines
+前面 Reactive 提到除了 Mutiny 還有提供另一種撰寫的方法，也就是 Kotlin Coroutines。  
+Coroutines (共常式) 的特色是每個 Coroutine 可以被 Suspend(暫停) 和 Resume(回復)， 允許被暫停之後再回覆執行，而暫停的狀態被保留等到復原後再以暫停時的狀態繼續執行。  
+而 Mutiny 的 mutiny-kotlin 模塊提供了與 Kotlin Coroutines 的結合， 例如再 Coroutine 或 suspend function 當中使用 awaitSuspending 等到 Uni 事件的發射。
+
+* 修改 AuditingRepository 自訂的方法改為 suspend function 然後使用 awaitSuspending
+* 修改 PostService 改為 suspend function
+* 修改 PostResource 改為 suspend function
+
+AuditingRepository.kt
+```kotlin
+...
+    suspend fun countByCriteria(criteria: Map<String, Any>): Long =
+        if(criteria.isEmpty())
+            count().awaitSuspending()
+        else
+            count(buildQuery(criteria), criteria).awaitSuspending()
+
+
+    suspend fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending), page: Long, show: Int): PageData<Entity>{
+        val total = countByCriteria(criteria)
+        val list = findByCriteria(criteria, sort)
+            .page(page.toInt() - 1, show)
+            .list().awaitSuspending()
+        return PageData(list, page, show, total)
+    }
+...
+```
+* 因為 awaitSuspending 是 suspend function 要調用 suspend function 只能在 Coroutines 或 suspend function 中使用
+* 改為 suspend function 然後 awaitSuspending 直接回傳值而不是 Uni<*&gt;
+* pageDataByCriteria  方法可以看到我們的寫法跟一般同步寫法一樣，但實際上他是異步執行
+
+PostService.kt
+```kotlin
+...
+    suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+            authorIdValue?.let {
+                put(Post::authorId.name, ObjectId(it))
+            }
+            category?.let {
+                put(Post::category.name, it)
+            }
+            published?.let {
+                put(Post::published.name, published)
+            }
+        }
+        return postRepository.pageDataByCriteria(
+            criteria = criteria,
+            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            page = page,
+            show = show
+        ).map(this::toPostSummary)
+    }
+...
+```
+
+PostResource.kt
+```kotlin
+...
+    @GET
+    suspend fun listPosts(
+        @QueryParam("category") category: String?,
+        @QueryParam("authorId") authorId: String?,
+        @QueryParam("page") @DefaultValue("1") page: Long,
+        @QueryParam("show") @DefaultValue("6") show: Int
+    ): TemplateInstance {
+        val metaData = buildHTMLMetaData(
+            title = "BLOG",
+            type = "website",
+            description = "BLOG 有許多好文章"
+        )
+        val pageData = postService.getExistedPostSummary(authorId, category, true, page, show)
+        return Templates.posts(metaData, pageData)
+    }
+...
+```
+
+可以看到使用 Kotlin Coroutines 可以將異步操作用一般同步寫法，這樣寫起來更加簡單可讀性高，所以我們傾向使用 Kotlin Coroutines
+
+#### 文章詳細內容
+
+再來我們完成查看發布文章的詳細內容。
+
+* PostService 創建 getExistedPostDetail 方法
+* 修改 PostResource 調用 getExistedPostDetail 取代寫死的假資料
+
+PostService.kt
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import io.quarkus.panache.common.Sort
+import io.smallrye.mutiny.coroutines.awaitSuspending
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.model.vo.PostDetail
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.repository.PostRepository
+import org.bson.types.ObjectId
+import org.jboss.logging.Logger
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.ws.rs.NotFoundException
+import kotlin.collections.HashMap
+
+@ApplicationScoped
+class PostService {
+    @Inject
+    lateinit var postRepository: PostRepository
+    @Inject
+    lateinit var logger: Logger
+
+    suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+            authorIdValue?.let {
+                put(Post::authorId.name, ObjectId(it))
+            }
+            category?.let {
+                put(Post::category.name, it)
+            }
+            published?.let {
+                put(Post::published.name, published)
+            }
+        }
+        return postRepository.pageDataByCriteria(
+            criteria = criteria,
+            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            page = page,
+            show = show
+        ).map(this::toPostSummary)
+    }
+
+    suspend fun getExistedPostDetail(id: String, published: Boolean?): PostDetail{
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+
+            kotlin.runCatching {
+                ObjectId(id)
+            }.onSuccess {
+                put(Post::id.name, it)
+            }.onFailure {
+                logger.info(it.message)
+                throw NotFoundException("post detail not found")
+            }
+            
+            published?.let {
+                put("published", published)
+            }
+        }
+        return postRepository.findByCriteria(criteria).firstResult().awaitSuspending()
+            ?.let(this::toPostDetail)
+            ?: throw NotFoundException("post detail not found")
+    }
+
+    private fun toPostSummary(post: Post): PostSummary = PostSummary(
+        id = post?.id.toString(),
+        title = post.title ,
+        category = post.category ,
+        authorName = post.authorName,
+        lastModifiedTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Taipei"))
+            .withLocale(Locale.TAIWAN)
+            .format(post.lastModifiedTime),
+        published = post.published
+    )
+
+    private fun toPostDetail(post: Post): PostDetail = PostDetail(
+        category = post.category,
+        title =  post.title,
+        content = post.content,
+        authorId = post.authorId.toString(),
+        authorName = post.authorName,
+        lastModifiedTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Taipei"))
+            .withLocale(Locale.TAIWAN)
+            .format(post.lastModifiedTime)
+    )
+}
+```
+* 查詢條件一樣有 deleted 為 false
+* 傳進來的 id 有可能不是 ObjectId 的格式，使用 runCatching 做錯誤處理
+* 查不到時丟出 NotFoundException
+
+
+PostResource.kt
+```kotlin
+...
+    @Path("/posts/{postId}")
+    @GET
+    suspend fun showPostDetail(
+        @PathParam("postId") postId: String
+    ): TemplateInstance {
+        val metaData = buildHTMLMetaData(
+            title = "BLOG-Test title 1",
+            type = "article",
+            description = "Test content 1"
+        )
+        val postDetail = postService.getExistedPostDetail(postId, true)
+        return Templates.postDetail(metaData, postDetail)
+    }
+...
+```
+
+這樣我們就完成了 Quarkus 與 MongoDB 的操作，並瞭解到 Quarkus Reactive 的寫法

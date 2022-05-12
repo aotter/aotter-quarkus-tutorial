@@ -1,16 +1,15 @@
 package net.aotter.quarkus.tutorial.service
 
-import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheMongoEntity
 import io.quarkus.panache.common.Sort
-import io.smallrye.mutiny.Uni
+import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.dto.map
 import net.aotter.quarkus.tutorial.model.po.Post
 import net.aotter.quarkus.tutorial.model.vo.PostDetail
 import net.aotter.quarkus.tutorial.model.vo.PostSummary
 import net.aotter.quarkus.tutorial.repository.PostRepository
-import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
+import org.jboss.logging.Logger
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -23,8 +22,10 @@ import kotlin.collections.HashMap
 class PostService {
     @Inject
     lateinit var postRepository: PostRepository
+    @Inject
+    lateinit var logger: Logger
 
-    fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): Uni<PageData<PostSummary>> {
+    suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
         val criteria = HashMap<String, Any>().apply {
             put(Post::deleted.name, false)
             authorIdValue?.let {
@@ -39,34 +40,32 @@ class PostService {
         }
         return postRepository.pageDataByCriteria(
             criteria = criteria,
-            sort = Sort.by("title", Sort.Direction.Ascending),
+            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
             page = page,
             show = show
-        ).map{ it.map(this::toPostSummary) }
+        ).map(this::toPostSummary)
     }
 
-    fun getExistedPostDetail(id: String, published: Boolean?): Uni<PostDetail>{
-        postRepository.count("id", ObjectId(id))
-            .subscribe().with{ println(it) }
-
-
+    suspend fun getExistedPostDetail(id: String, published: Boolean?): PostDetail{
         val criteria = HashMap<String, Any>().apply {
             put(Post::deleted.name, false)
-            put("id", ObjectId(id))
+
+            kotlin.runCatching {
+                ObjectId(id)
+            }.onSuccess {
+                put(Post::id.name, it)
+            }.onFailure {
+                logger.info(it.message)
+                throw NotFoundException("post detail not found")
+            }
+
             published?.let {
                 put("published", published)
             }
         }
-
-        return postRepository.findByCriteria(criteria).firstResult()
-            .onItem()
-            .transform {
-                if(it == null){
-                    null
-                }else{
-                    toPostDetail(it)
-                }
-            }
+        return postRepository.findByCriteria(criteria).firstResult().awaitSuspending()
+            ?.let(this::toPostDetail)
+            ?: throw NotFoundException("post detail not found")
     }
 
     private fun toPostSummary(post: Post): PostSummary = PostSummary(

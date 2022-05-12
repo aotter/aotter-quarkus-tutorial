@@ -31,9 +31,6 @@ class PostResource {
     @Inject
     lateinit var postService: PostService
 
-    @Inject
-    lateinit var logger: Logger
-
     @CheckedTemplate
     object Templates{
         @JvmStatic
@@ -43,37 +40,33 @@ class PostResource {
     }
 
     @GET
-    fun listPosts(
+    suspend fun listPosts(
         @QueryParam("category") category: String?,
         @QueryParam("authorId") authorId: String?,
         @QueryParam("page") @DefaultValue("1") page: Long,
         @QueryParam("show") @DefaultValue("6") show: Int
-    ): Uni<TemplateInstance> {
+    ): TemplateInstance {
         val metaData = buildHTMLMetaData(
             title = "BLOG",
             type = "website",
             description = "BLOG 有許多好文章"
         )
-        return postService.getExistedPostSummary(authorId, category, true, page, show)
-            .map{ pageData -> Templates.posts(metaData, pageData)  }
+        val pageData = postService.getExistedPostSummary(authorId, category, true, page, show)
+        return Templates.posts(metaData, pageData)
     }
 
     @Path("/posts/{postId}")
     @GET
-    fun showPostDetail(
+    suspend fun showPostDetail(
         @PathParam("postId") postId: String
-    ): Uni<TemplateInstance> {
+    ): TemplateInstance {
         val metaData = buildHTMLMetaData(
             title = "BLOG-Test title 1",
             type = "article",
             description = "Test content 1"
         )
-        logger.info("postId: $postId")
-
-
-        return postService.getExistedPostDetail(postId, true)
-            .map { Templates.postDetail(metaData, it) }
-
+        val postDetail = postService.getExistedPostDetail(postId, true)
+        return Templates.postDetail(metaData, postDetail)
     }
 
     private fun buildHTMLMetaData(title: String, type: String, description: String, image: String = ""): HTMLMetaData{

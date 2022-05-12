@@ -4,6 +4,7 @@ import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheMongoRepository
 import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheQuery
 import io.quarkus.panache.common.Sort
 import io.smallrye.mutiny.Uni
+import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.po.AuditingEntity
 import java.util.stream.Stream
@@ -74,11 +75,11 @@ abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoR
         return super.persistOrUpdate(entities)
     }
 
-    fun countByCriteria(criteria: Map<String, Any>): Uni<Long> =
+    suspend fun countByCriteria(criteria: Map<String, Any>): Long =
         if(criteria.isEmpty())
-            count()
+            count().awaitSuspending()
         else
-            count(buildQuery(criteria), criteria)
+            count(buildQuery(criteria), criteria).awaitSuspending()
 
     fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending)): ReactivePanacheQuery<Entity> =
         if(criteria.isEmpty())
@@ -86,13 +87,12 @@ abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoR
         else
             find(buildQuery(criteria), sort, criteria)
 
-    fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending), page: Long, show: Int): Uni<PageData<Entity>>{
+    suspend fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending), page: Long, show: Int): PageData<Entity>{
         val total = countByCriteria(criteria)
-        val list = findByCriteria(criteria, sort).page(page.toInt() - 1, show).list()
-
-        return Uni.combine().all().unis(total, list).asTuple()
-            .onItem()
-            .transform{tuple -> PageData(tuple.item2, page, show, tuple.item1) }
+        val list = findByCriteria(criteria, sort)
+            .page(page.toInt() - 1, show)
+            .list().awaitSuspending()
+        return PageData(list, page, show, total)
     }
 
     private fun buildQuery(criteria: Map<String, Any>): String = criteria.keys.joinToString(separator = " and ") { """$it = :$it""" }
