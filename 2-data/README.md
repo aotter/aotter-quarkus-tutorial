@@ -66,7 +66,8 @@ quarkus.mongodb.database = blog
 @MongoEntity 也可以設定 collection 名稱，預設使用 class 名稱  
 
 #### Dev Services
-Quarkus 提供一種叫過 Dev Services 的功能，它讓你能夠在沒有任何設定下創建各種資料庫。  
+Quarkus 提供一種叫過 Dev Services 的功能，當你已經安裝好 Docker 環境，當他發現你將 extension 引入但未對其進行配置，
+會自動啟動相關服務並連接至應用程式使勇該服務，換句話說它讓你能夠在沒有任何設定下創建有 Dev Services 支援的資料庫。  
 使用方法就是不要設定 quarkus.mongodb.connection-string，這樣 Quarkus 就會在測試或開發模式時自動啟動一個 MongoDB 容器並設定連接。
 
 我們這邊使用 Dev Services 所以將 application.properties 的 quarkus.mongodb.connection-string 設定拿掉
@@ -265,16 +266,18 @@ import javax.enterprise.context.ApplicationScoped
 @ApplicationScoped
 class PostRepository: ReactivePanacheMongoRepository<Post>{
     fun countByCriteria(criteria: Map<String, Any>): Uni<Long> =
-        if(criteria.isEmpty())
+        if(criteria.isEmpty()){
             count()
-        else
+        } else {
             count(buildQuery(criteria), criteria)
+        }  
 
     fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id")): ReactivePanacheQuery<Post> =
-        if(criteria.isEmpty())
+        if(criteria.isEmpty()){
             findAll(sort)
-        else
+        } else {
             find(buildQuery(criteria), criteria)
+        }
 
     fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id"), page: Long, show: Int): Uni<PageData<Post>>{
         val total = countByCriteria(criteria)
@@ -685,16 +688,18 @@ abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoR
  }
 
  fun countByCriteria(criteria: Map<String, Any>): Uni<Long> =
-  if(criteria.isEmpty())
-   count()
-  else
-   count(buildQuery(criteria), criteria)
+  if(criteria.isEmpty()){
+      count()   
+  } else {
+      count(buildQuery(criteria), criteria)
+  }
 
  fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id")): ReactivePanacheQuery<Entity> =
-  if(criteria.isEmpty())
-   findAll(sort)
-  else
-   find(buildQuery(criteria), criteria)
+  if(criteria.isEmpty()){
+      findAll(sort)   
+  } else {
+      find(buildQuery(criteria), criteria)   
+  }
 
  fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id"), page: Long, show: Int): Uni<PageData<Entity>>{
   val total = countByCriteria(criteria)
@@ -764,7 +769,7 @@ AppInitConfig.kt
 
 #### Kotlin Coroutines
 前面 Reactive 提到除了 Mutiny 還有提供另一種撰寫的方法，也就是 Kotlin Coroutines。  
-Coroutines (共常式) 的特色是每個 Coroutine 可以被 Suspend(暫停) 和 Resume(回復)， 允許被暫停之後再回覆執行，而暫停的狀態被保留等到復原後再以暫停時的狀態繼續執行。  
+Coroutines (共常式，或大陸翻譯為協程) 的特色是每個 Coroutine 可以被 Suspend(暫停) 和 Resume(回復)， 允許被暫停之後再回覆執行，而暫停的狀態被保留等到復原後再以暫停時的狀態繼續執行。  
 而 Mutiny 的 mutiny-kotlin 模塊提供了與 Kotlin Coroutines 的結合， 例如再 Coroutine 或 suspend function 當中使用 awaitSuspending 等到 Uni 事件的發射。
 
 * 修改 AuditingRepository 自訂的方法改為 suspend function 然後使用 awaitSuspending

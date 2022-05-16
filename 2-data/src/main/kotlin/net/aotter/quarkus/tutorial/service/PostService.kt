@@ -26,44 +26,20 @@ class PostService {
     lateinit var logger: Logger
 
     suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
-        val criteria = HashMap<String, Any>().apply {
-            put(Post::deleted.name, false)
-            authorIdValue?.let {
-                put(Post::authorId.name, ObjectId(it))
-            }
-            category?.let {
-                put(Post::category.name, it)
-            }
-            published?.let {
-                put(Post::published.name, published)
-            }
-        }
-        return postRepository.pageDataByCriteria(
-            criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
-            page = page,
-            show = show
-        ).map(this::toPostSummary)
+        val authorId = kotlin.runCatching {
+            ObjectId(authorIdValue)
+        }.getOrNull()
+
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(authorId, category, published, page, show)
+            .map(this::toPostSummary)
     }
 
-    suspend fun getExistedPostDetail(id: String, published: Boolean?): PostDetail{
-        val criteria = HashMap<String, Any>().apply {
-            put(Post::deleted.name, false)
+    suspend fun getExistedPostDetail(idValue: String, published: Boolean?): PostDetail{
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw NotFoundException("post detail not found")
 
-            kotlin.runCatching {
-                ObjectId(id)
-            }.onSuccess {
-                put(Post::id.name, it)
-            }.onFailure {
-                logger.info(it.message)
-                throw NotFoundException("post detail not found")
-            }
-
-            published?.let {
-                put("published", published)
-            }
-        }
-        return postRepository.findByCriteria(criteria).firstResult().awaitSuspending()
+        return postRepository.findOneByDeletedIsFalseAndIdAndPublished(id, published)
             ?.let(this::toPostDetail)
             ?: throw NotFoundException("post detail not found")
     }
