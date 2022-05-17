@@ -1,15 +1,12 @@
 package net.aotter.quarkus.tutorial.model.po
 
 import io.quarkus.mongodb.panache.common.MongoEntity
-import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 
 @MongoEntity
-data class Post(
-    @field:[
-        BsonProperty("_id")
-    ]
+class Post(
+    @field: BsonProperty("_id")
     var id: ObjectId? = null,
     var authorId: ObjectId,
     var authorName: String,

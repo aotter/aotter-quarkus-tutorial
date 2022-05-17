@@ -32,7 +32,10 @@ MongoDB 層級如下
 
 ## MongoDB with Panache for Kotlin 介紹
 
-使用 MongoDB 原始 API 十分繁瑣，你必須將你的實體和查詢轉換為 MongoDB Document。  
+相較於直接使用 MongoDB Client，MongoDB with Panache 提供了 PojoCodeProvider， 你不需要自己撰寫 CodecProvider 處理 MongoDB Document 與物件的轉換。  
+同時透過繼承 MongoEntity，你無需自己管理 ID。一些簡單的 CRUD 也可以夠過 PanacheQL 達成，而複雜的操作你還是可以在 Panache 中使用原生 API 並享有 PojoCodeProvider 的支援。  
+在我們的情境中很適合使用 PanacheQL 來處理簡單的 CRUD。  
+
 MongoDB with Panache 建立在 MongoDB Client 之上，提供了活動紀錄模式 (active record pattern) 和儲存庫 (repository) 兩種方式，處理大部分的樣板程式碼讓開發者專注於業務邏輯。  
 使用 PojoCodecProvider 自動轉換實體與 MongoDB Document ，有以下 annotation 客製化映射
 * @BsonId: 指定你的 id field
