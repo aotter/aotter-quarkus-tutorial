@@ -60,12 +60,12 @@ class PostResource {
     suspend fun showPostDetail(
         @PathParam("postId") postId: String
     ): TemplateInstance {
-        val metaData = buildHTMLMetaData(
-            title = "BLOG-Test title 1",
-            type = "article",
-            description = "Test content 1"
-        )
         val postDetail = postService.getExistedPostDetail(postId, true)
+        val metaData = buildHTMLMetaData(
+            title = """"BLOG-${postDetail.title}""",
+            type = "article",
+            description = postDetail.content ?: ""
+        )
         return Templates.postDetail(metaData, postDetail)
     }
 
