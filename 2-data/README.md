@@ -70,7 +70,7 @@ quarkus.mongodb.database = blog
 
 #### Dev Services
 Quarkus 提供一種叫過 Dev Services 的功能，當你已經安裝好 Docker 環境，當他發現你將 extension 引入但未對其進行配置，
-會自動啟動相關服務並連接至應用程式使勇該服務，換句話說它讓你能夠在沒有任何設定下創建有 Dev Services 支援的資料庫。  
+會自動啟動相關服務並連接至應用程式使用該服務，換句話說它讓你能夠在沒有任何設定下創建有 Dev Services 支援的資料庫。  
 使用方法就是不要設定 quarkus.mongodb.connection-string，這樣 Quarkus 就會在測試或開發模式時自動啟動一個 MongoDB 容器並設定連接。
 
 我們這邊使用 Dev Services 所以將 application.properties 的 quarkus.mongodb.connection-string 設定拿掉
