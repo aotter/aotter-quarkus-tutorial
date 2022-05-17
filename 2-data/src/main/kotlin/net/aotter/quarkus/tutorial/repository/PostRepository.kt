@@ -6,7 +6,6 @@ import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.po.Post
 import org.bson.types.ObjectId
 import javax.enterprise.context.ApplicationScoped
-import javax.ws.rs.NotFoundException
 
 @ApplicationScoped
 class PostRepository: AuditingRepository<Post>(){
@@ -46,5 +45,4 @@ class PostRepository: AuditingRepository<Post>(){
         }
         return  findByCriteria(criteria).firstResult().awaitSuspending()
     }
-
 }

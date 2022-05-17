@@ -1,7 +1,5 @@
 package net.aotter.quarkus.tutorial.service
 
-import io.quarkus.panache.common.Sort
-import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.dto.map
 import net.aotter.quarkus.tutorial.model.po.Post
@@ -9,21 +7,17 @@ import net.aotter.quarkus.tutorial.model.vo.PostDetail
 import net.aotter.quarkus.tutorial.model.vo.PostSummary
 import net.aotter.quarkus.tutorial.repository.PostRepository
 import org.bson.types.ObjectId
-import org.jboss.logging.Logger
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.enterprise.context.ApplicationScoped
 import javax.inject.Inject
 import javax.ws.rs.NotFoundException
-import kotlin.collections.HashMap
 
 @ApplicationScoped
 class PostService {
     @Inject
     lateinit var postRepository: PostRepository
-    @Inject
-    lateinit var logger: Logger
 
     suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
         val authorId = kotlin.runCatching {

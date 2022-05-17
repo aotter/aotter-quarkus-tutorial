@@ -97,9 +97,7 @@ import org.bson.types.ObjectId
 import java.time.Instant
 
 data class Post (
-    @field:[
-        BsonProperty("_id")
-    ]
+    @field: BsonProperty("_id")
     var id: ObjectId? = null,
     var authorId: ObjectId? = null,
     var authorName: String? = null,
@@ -253,6 +251,7 @@ Coroutines 是一種順序式撰寫異步程式碼的方法，他在 I/O 期間�
 * 為了實作分頁，我們需要 count 總共有幾筆資料，還有透過 find 得到 ReactivePanacheQuery 實作分頁
 * 在 PostRepository 實作 countByCriteria、findByCriteria、pageDataByCriteria
 * 由於我們的搜尋條件不定所以透過 Map 裝載條件參數，在使用 buildQuery 產生 PanacheQL
+* 撰寫 findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished 實作文章分頁查詢
 
 PostRepository.kt
 ```kotlin
@@ -268,6 +267,30 @@ import javax.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
 class PostRepository: ReactivePanacheMongoRepository<Post>{
+    fun findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(
+        authorId: ObjectId?, category: String?, published: Boolean?,
+        page: Long, show: Int
+    ): Uni<PageData<Post>>{
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+            authorId?.let {
+                put(Post::authorId.name, it)
+            }
+            category?.let {
+                put(Post::category.name, it)
+            }
+            published?.let {
+                put(Post::published.name, it)
+            }
+        }
+        return pageDataByCriteria(
+            criteria = criteria,
+            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            page = page,
+            show = show
+        )
+    }
+ 
     fun countByCriteria(criteria: Map<String, Any>): Uni<Long> =
         if(criteria.isEmpty()){
             count()
@@ -296,6 +319,8 @@ class PostRepository: ReactivePanacheMongoRepository<Post>{
 * pageDataByCriteria 最後透過 Mutiny combine 可以將多個流發出的項目結合成一個聚合發送，下游收到再處理
 * .map{} 是 Mutiny 提供的簡寫就等於是 uni.onItem().transform{} ，接受到發出的項目後轉換往下游發出
 * 我們查詢傳遞是透過 Map，使用 buildQuery 來串接查詢條件產生 PanacheQL
+* 在 findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished 實作動態條件查詢，沒有設定的篩選條件就不放進 criteria Map
+* 想要顯示最新更新的文章，所以用 lastModifiedTime 降冪排序
 
 #### 建立 PostService 處理業務邏輯
 
@@ -351,24 +376,12 @@ class PostService {
     lateinit var postRepository: PostRepository
 
     fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean? , page: Long, show: Int): Uni<PageData<PostSummary>> {
-        val criteria = HashMap<String, Any>().apply {
-            put(Post::deleted.name, false)
-            authorIdValue?.let {
-                put(Post::authorId.name, ObjectId(it))
-            }
-            category?.let {
-                put(Post::category.name, it)
-            }
-            published?.let {
-                put(Post::published.name, published)
-            }
-        }
-        return postRepository.pageDataByCriteria(
-            criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
-            page = page,
-            show = show
-        ).map { it.map(this::toPostSummary) }
+        val authorId = kotlin.runCatching {
+            ObjectId(authorIdValue)
+        }.getOrNull()
+        
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(authorId, category, published, page, show)
+            .map { it.map(this::toPostSummary) }
     }
     
     private fun toPostSummary(post: Post): PostSummary = PostSummary(
@@ -384,10 +397,8 @@ class PostService {
     )
 }
 ```
-* 由於我們要達到動態條件查詢，所以對於沒有設定的篩選條件就不放進 criteria Map
+* 字串和 ObjectId 轉換，發生錯誤就為 null，不加入篩選條件
 * 查詢回來的 Uni<Post&gt; 使用 Mutiny map 轉換為 Uni<PostSummary&gt;
-* 因為是還存在的文章，所以 delete 為 false
-* 想要顯示最新更新的文章，所以用 lastModifiedTime 降冪排序
 
 PostResource.kt
 ```kotlin
@@ -595,9 +606,7 @@ import org.bson.types.ObjectId
 
 @MongoEntity
 data class Post(
-    @field:[
-        BsonProperty("_id")
-    ]
+    @field: BsonProperty("_id")
     var id: ObjectId? = null,
     var authorId: ObjectId,
     var authorName: String,
@@ -716,7 +725,7 @@ abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoR
 }
 ```
 * 創建抽象類別繼承 ReactivePanacheMongoRepository 
-* 將原本的方法搬到抽象類別上
+* 將共用的方法搬到抽象類別上
 * 放棄原本的 persistOrUpdateWithAuditing 方法，這樣無法確保使用的人呼叫正確的方法，lastModifiedTime 就不會正確更新
 * 改由複寫 ReactivePanacheMongoRepository 關於 entity 的 persist Or update 方法，在保存前調用 beforePersistOrUpdate
 * 如果是直接呼叫 update(update: kotlin.String, params: io.quarkus.panache.common.Parameters) 等 Query 還是會發生 lastModifiedTime 需要要手動更新情形
@@ -730,9 +739,32 @@ import javax.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
 class PostRepository: AuditingRepository<Post>(){
+    fun findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(
+        authorId: ObjectId?, category: String?, published: Boolean?,
+        page: Long, show: Int
+    ): Uni<PageData<Post>>{
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+            authorId?.let {
+                put(Post::authorId.name, it)
+            }
+            category?.let {
+                put(Post::category.name, it)
+            }
+            published?.let {
+                put(Post::published.name, it)
+            }
+        }
+        return pageDataByCriteria(
+            criteria = criteria,
+            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            page = page,
+            show = show
+       )
+   }
 }
-
 ```
+* 只留下 findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished
 
 AppInitConfig.kt
 ```kotlin
@@ -776,6 +808,7 @@ Coroutines (共常式，或大陸翻譯為協程) 的特色是每個 Coroutine �
 而 Mutiny 的 mutiny-kotlin 模塊提供了與 Kotlin Coroutines 的結合， 例如再 Coroutine 或 suspend function 當中使用 awaitSuspending 等到 Uni 事件的發射。
 
 * 修改 AuditingRepository 自訂的方法改為 suspend function 然後使用 awaitSuspending
+* 修改 PostRepository 改為 suspend function
 * 修改 PostService 改為 suspend function
 * 修改 PostResource 改為 suspend function
 
@@ -802,28 +835,55 @@ AuditingRepository.kt
 * 改為 suspend function 然後 awaitSuspending 直接回傳值而不是 Uni<*&gt;
 * pageDataByCriteria  方法可以看到我們的寫法跟一般同步寫法一樣，但實際上他是異步執行
 
-PostService.kt
+PostRepository.kt
 ```kotlin
-...
-    suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
+package net.aotter.quarkus.tutorial.repository
+
+import io.quarkus.panache.common.Sort
+import io.smallrye.mutiny.coroutines.awaitSuspending
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.po.Post
+import org.bson.types.ObjectId
+import javax.enterprise.context.ApplicationScoped
+
+@ApplicationScoped
+class PostRepository: AuditingRepository<Post>(){
+    suspend fun findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(
+        authorId: ObjectId?, category: String?, published: Boolean?,
+        page: Long, show: Int
+    ): PageData<Post> {
         val criteria = HashMap<String, Any>().apply {
             put(Post::deleted.name, false)
-            authorIdValue?.let {
-                put(Post::authorId.name, ObjectId(it))
+            authorId?.let {
+                put(Post::authorId.name, it)
             }
             category?.let {
                 put(Post::category.name, it)
             }
             published?.let {
-                put(Post::published.name, published)
+                put(Post::published.name, it)
             }
         }
-        return postRepository.pageDataByCriteria(
+        return pageDataByCriteria(
             criteria = criteria,
             sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
             page = page,
             show = show
-        ).map(this::toPostSummary)
+        )
+    }
+}
+```
+
+PostService.kt
+```kotlin
+...
+    suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
+        val authorId = kotlin.runCatching {
+            ObjectId(authorIdValue)
+        }.getOrNull()
+
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(authorId, category, published, page, show)
+            .map(this::toPostSummary)
     }
 ...
 ```
@@ -855,15 +915,32 @@ PostResource.kt
 
 再來我們完成查看發布文章的詳細內容。
 
+* PostRepository 創建 findOneByDeletedIsFalseAndIdAndPublished 方法
 * PostService 創建 getExistedPostDetail 方法
 * 修改 PostResource 調用 getExistedPostDetail 取代寫死的假資料
+
+```kotlin
+...
+    suspend fun findOneByDeletedIsFalseAndIdAndPublished(
+        id: ObjectId, published: Boolean?
+    ): Post?{
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+            put(Post::id.name, id)
+            published?.let {
+                put(Post::published.name, it)
+            }
+        }
+        return  findByCriteria(criteria).firstResult().awaitSuspending()
+    }
+...
+```
+* 有可能查不到
 
 PostService.kt
 ```kotlin
 package net.aotter.quarkus.tutorial.service
 
-import io.quarkus.panache.common.Sort
-import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.dto.map
 import net.aotter.quarkus.tutorial.model.po.Post
@@ -871,61 +948,33 @@ import net.aotter.quarkus.tutorial.model.vo.PostDetail
 import net.aotter.quarkus.tutorial.model.vo.PostSummary
 import net.aotter.quarkus.tutorial.repository.PostRepository
 import org.bson.types.ObjectId
-import org.jboss.logging.Logger
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.enterprise.context.ApplicationScoped
 import javax.inject.Inject
 import javax.ws.rs.NotFoundException
-import kotlin.collections.HashMap
 
 @ApplicationScoped
 class PostService {
     @Inject
     lateinit var postRepository: PostRepository
-    @Inject
-    lateinit var logger: Logger
 
     suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
-        val criteria = HashMap<String, Any>().apply {
-            put(Post::deleted.name, false)
-            authorIdValue?.let {
-                put(Post::authorId.name, ObjectId(it))
-            }
-            category?.let {
-                put(Post::category.name, it)
-            }
-            published?.let {
-                put(Post::published.name, published)
-            }
-        }
-        return postRepository.pageDataByCriteria(
-            criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
-            page = page,
-            show = show
-        ).map(this::toPostSummary)
+        val authorId = kotlin.runCatching {
+            ObjectId(authorIdValue)
+        }.getOrNull()
+
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(authorId, category, published, page, show)
+            .map(this::toPostSummary)
     }
 
-    suspend fun getExistedPostDetail(id: String, published: Boolean?): PostDetail{
-        val criteria = HashMap<String, Any>().apply {
-            put(Post::deleted.name, false)
+    suspend fun getExistedPostDetail(idValue: String, published: Boolean?): PostDetail{
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw NotFoundException("post detail not found")
 
-            kotlin.runCatching {
-                ObjectId(id)
-            }.onSuccess {
-                put(Post::id.name, it)
-            }.onFailure {
-                logger.info(it.message)
-                throw NotFoundException("post detail not found")
-            }
-            
-            published?.let {
-                put("published", published)
-            }
-        }
-        return postRepository.findByCriteria(criteria).firstResult().awaitSuspending()
+        return postRepository.findOneByDeletedIsFalseAndIdAndPublished(id, published)
             ?.let(this::toPostDetail)
             ?: throw NotFoundException("post detail not found")
     }
@@ -955,7 +1004,6 @@ class PostService {
     )
 }
 ```
-* 查詢條件一樣有 deleted 為 false
 * 傳進來的 id 有可能不是 ObjectId 的格式，使用 runCatching 做錯誤處理
 * 查不到時丟出 NotFoundException
 
