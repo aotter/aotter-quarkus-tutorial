@@ -5,7 +5,10 @@ import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.po.Post
 import org.bson.types.ObjectId
+import org.jboss.logging.Logger
+import javax.annotation.PostConstruct
 import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
 
 @ApplicationScoped
 class PostRepository: AuditingRepository<Post>(){

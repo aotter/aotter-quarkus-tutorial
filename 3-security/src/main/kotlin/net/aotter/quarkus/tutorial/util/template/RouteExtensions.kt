@@ -13,5 +13,7 @@ class RouteExtensions {
         fun setRouteQueryParam(builder: UriBuilder, name: String, value: Any): UriBuilder  {
             return  builder.replaceQueryParam(name, value)
         }
+        @JvmStatic
+        fun getRouteQueryParam(request: HttpServerRequest, parameterName: String): String? = request.getParam(parameterName)
     }
 }

@@ -1,6 +1,5 @@
 package net.aotter.quarkus.tutorial.repository
 
-import com.mongodb.client.model.IndexModel
 import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheMongoRepository
 import io.quarkus.mongodb.panache.kotlin.reactive.ReactivePanacheQuery
 import io.quarkus.panache.common.Sort
@@ -8,9 +7,7 @@ import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.po.AuditingEntity
-import org.jboss.logging.Logger
 import java.util.stream.Stream
-import javax.inject.Inject
 
 abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoRepository<Entity>{
     override fun persist(entity: Entity): Uni<Entity> {

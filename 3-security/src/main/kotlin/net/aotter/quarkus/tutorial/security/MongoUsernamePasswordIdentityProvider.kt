@@ -25,7 +25,7 @@ class MongoUsernamePasswordIdentityProvider: AbstractUserIdentityProvider(), Ide
             throw AuthenticationFailedException()
         }
         return loadUserByUsername(username).map { user ->
-                user?.takeIf { BcryptUtil.matches(String(password), user?.credentials) }
+                user?.takeIf { BcryptUtil.matches(String(password), user.credentials) }
                     ?.let { buildSecurityIdentity(it) }
                     ?: throw AuthenticationFailedException()
         }

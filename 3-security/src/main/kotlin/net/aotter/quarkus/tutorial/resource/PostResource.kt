@@ -20,23 +20,21 @@ import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.SecurityContext
 import javax.ws.rs.core.UriInfo
 
 @Path("/")
 @Produces(MediaType.TEXT_HTML)
-class PostResource {
-    @Context
-    lateinit var uriInfo: UriInfo
-
+class PostResource: AbstractTemplateResource() {
     @Inject
     lateinit var postService: PostService
 
     @CheckedTemplate
     object Templates{
         @JvmStatic
-        external fun posts(metaData: HTMLMetaData, pageData: PageData<PostSummary>): TemplateInstance
+        external fun posts(metaData: HTMLMetaData, securityContext: SecurityContext, pageData: PageData<PostSummary>): TemplateInstance
         @JvmStatic
-        external fun postDetail(metaData: HTMLMetaData, postDetail: PostDetail): TemplateInstance
+        external fun postDetail(metaData: HTMLMetaData, securityContext: SecurityContext, postDetail: PostDetail): TemplateInstance
     }
 
     @GET
@@ -52,7 +50,7 @@ class PostResource {
             description = "BLOG 有許多好文章"
         )
         val pageData = postService.getExistedPostSummary(authorId, category, true, page, show)
-        return Templates.posts(metaData, pageData)
+        return Templates.posts(metaData, securityContext, pageData)
     }
 
     @Path("/posts/{postId}")
@@ -66,11 +64,6 @@ class PostResource {
             type = "article",
             description = postDetail.content ?: ""
         )
-        return Templates.postDetail(metaData, postDetail)
-    }
-
-    private fun buildHTMLMetaData(title: String, type: String, description: String, image: String = ""): HTMLMetaData{
-        val url = uriInfo.baseUriBuilder.replaceQuery("").toTemplate()
-        return HTMLMetaData(title, type, description.abbreviate(20), url, image)
+        return Templates.postDetail(metaData, securityContext, postDetail)
     }
 }

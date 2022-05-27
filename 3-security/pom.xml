@@ -53,15 +53,17 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-mongodb-panache-kotlin</artifactId>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.quarkus/quarkus-security -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-security</artifactId>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.quarkus/quarkus-elytron-security-common -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-elytron-security-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
