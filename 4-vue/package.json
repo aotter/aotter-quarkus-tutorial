@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@vue/cli-plugin-router": "~5.0.0"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "bootstrap": "^4.6.1",
+    "bootstrap-vue": "^2.22.0"
+  }
+}
