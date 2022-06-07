@@ -262,6 +262,16 @@ pom.xml
 ./mvnw package
 ```
 
+最後我們將 .gitignore 新增我們 webpack 打包產生的檔案
+
+.gitignore
+```
+# webpack build
+src/main/resources/templates/ConsoleResource/index.html
+src/main/resources/META-INF/resources/assets/webapp/
+```
+* 將 webpack 打包產生的檔案忽略掉，不要盡到版本控制裡
+
 #### 導覽列
 再來我們來完成基本的畫面，使用 Vue 完成我們原本 Qute 的 layout.html，  
 但首先我們要引入以下需要的 lib
