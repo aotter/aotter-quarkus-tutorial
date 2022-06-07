@@ -3,7 +3,9 @@ package net.aotter.quarkus.tutorial.repository
 import io.quarkus.panache.common.Sort
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.po.AuditingEntity
 import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.util.bsonFieldName
 import org.bson.types.ObjectId
 import org.jboss.logging.Logger
 import javax.annotation.PostConstruct
@@ -30,7 +32,7 @@ class PostRepository: AuditingRepository<Post>(){
         }
         return pageDataByCriteria(
             criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            sort = Sort.by(AuditingEntity::lastModifiedTime.bsonFieldName(), Sort.Direction.Descending).and(Post::id.bsonFieldName()),
             page = page,
             show = show
         )

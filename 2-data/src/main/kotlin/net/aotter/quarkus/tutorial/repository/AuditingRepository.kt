@@ -82,14 +82,14 @@ abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoR
             count(buildQuery(criteria), criteria).awaitSuspending()
         }
 
-    fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending)): ReactivePanacheQuery<Entity> =
+    fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id", Sort.Direction.Ascending)): ReactivePanacheQuery<Entity> =
         if(criteria.isEmpty()){
             findAll(sort)
         } else {
             find(buildQuery(criteria), sort, criteria)
         }
 
-    suspend fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending), page: Long, show: Int): PageData<Entity>{
+    suspend fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id", Sort.Direction.Ascending), page: Long, show: Int): PageData<Entity>{
         val total = countByCriteria(criteria)
         val list = findByCriteria(criteria, sort)
             .page(page.toInt() - 1, show)

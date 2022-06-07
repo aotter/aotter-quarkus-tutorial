@@ -174,15 +174,16 @@ val list: Uni<List<Post>> = query.page(0, 6).list()
 ```
 
 #### Sorting
-PanacheMongoRepository 所有的方法都接受參數 Sort 用來排序
+PanacheMongoRepository 所有的方法都接受參數 Sort 用來排序  
+測試結果發現 sort 接受的欄位名稱為實際名稱
 
 ```kotlin
 // 使用 id 排序，預設是升冪
-postRepository.list(Sort.by("id"))
+postRepository.list(Sort.by("_id"))
 // 可以通過第二個參數指定升降冪
-postRepository.list(Sort.by("id", Sort.by("id", Sort.Direction.Descending)))
+postRepository.list(Sort.by("_id", Sort.by("id", Sort.Direction.Descending)))
 // 可以排序多個欄位
-postRepository.list(Sort.by("id").and("createdTime"))
+postRepository.list(Sort.by("_id").and("createdTime"))
 ```
 #### Query
 
@@ -248,10 +249,25 @@ Coroutines 是一種順序式撰寫異步程式碼的方法，他在 I/O 期間�
 
 我們接下來在 PostRepository 實作查詢文章分頁的功能
 
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/util/ReflectExtensions 新增 bsonFieldName 方法取得資料庫實際的 field 名稱
 * 為了實作分頁，我們需要 count 總共有幾筆資料，還有透過 find 得到 ReactivePanacheQuery 實作分頁
 * 在 PostRepository 實作 countByCriteria、findByCriteria、pageDataByCriteria
 * 由於我們的搜尋條件不定所以透過 Map 裝載條件參數，在使用 buildQuery 產生 PanacheQL
 * 撰寫 findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished 實作文章分頁查詢
+
+ReflectExtensions.kt
+```kotlin
+package net.aotter.quarkus.tutorial.util
+
+import org.bson.codecs.pojo.annotations.BsonProperty
+import kotlin.reflect.KProperty1
+import kotlin.reflect.jvm.javaField
+
+fun <T, R> KProperty1<T, R>.bsonFieldName() = this.javaField
+    ?.getAnnotation(BsonProperty::class.java)
+    ?.let { it.value }
+    ?: this.name
+```
 
 PostRepository.kt
 ```kotlin
@@ -285,7 +301,7 @@ class PostRepository: ReactivePanacheMongoRepository<Post>{
         }
         return pageDataByCriteria(
             criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            sort = Sort.by(Post::createdTime.bsonFieldName(), Sort.Direction.Descending).and(Post::id.bsonFieldName()),
             page = page,
             show = show
         )
@@ -298,14 +314,14 @@ class PostRepository: ReactivePanacheMongoRepository<Post>{
             count(buildQuery(criteria), criteria)
         }  
 
-    fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id")): ReactivePanacheQuery<Post> =
+    fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id")): ReactivePanacheQuery<Post> =
         if(criteria.isEmpty()){
             findAll(sort)
         } else {
             find(buildQuery(criteria), criteria)
         }
 
-    fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id"), page: Long, show: Int): Uni<PageData<Post>>{
+    fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id"), page: Long, show: Int): Uni<PageData<Post>>{
         val total = countByCriteria(criteria)
         val list = findByCriteria(criteria, sort).page(page.toInt() - 1, show).list()
         return Uni.combine().all().unis(total, list).asTuple()
@@ -320,7 +336,7 @@ class PostRepository: ReactivePanacheMongoRepository<Post>{
 * .map{} 是 Mutiny 提供的簡寫就等於是 uni.onItem().transform{} ，接受到發出的項目後轉換往下游發出
 * 我們查詢傳遞是透過 Map，使用 buildQuery 來串接查詢條件產生 PanacheQL
 * 在 findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished 實作動態條件查詢，沒有設定的篩選條件就不放進 criteria Map
-* 想要顯示最新更新的文章，所以用 lastModifiedTime 降冪排序
+* 想要顯示最新更新的文章，所以用 lastModifiedTime 降冪排序，若是時間相同再使用 id，都需要使用 bsonFieldName 取得真正的欄位名稱
 
 #### 建立 PostService 處理業務邏輯
 
@@ -706,14 +722,14 @@ abstract class AuditingRepository<Entity: AuditingEntity>: ReactivePanacheMongoR
       count(buildQuery(criteria), criteria)
   }
 
- fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id")): ReactivePanacheQuery<Entity> =
+ fun findByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id")): ReactivePanacheQuery<Entity> =
   if(criteria.isEmpty()){
       findAll(sort)   
   } else {
       find(buildQuery(criteria), criteria)   
   }
 
- fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id"), page: Long, show: Int): Uni<PageData<Entity>>{
+ fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id"), page: Long, show: Int): Uni<PageData<Entity>>{
   val total = countByCriteria(criteria)
   val list = findByCriteria(criteria, sort).page(page.toInt() - 1, show).list()
 
@@ -757,7 +773,7 @@ class PostRepository: AuditingRepository<Post>(){
         }
         return pageDataByCriteria(
             criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            sort = Sort.by(AuditingEntity::lastModifiedTime.bsonFieldName(), Sort.Direction.Descending).and(Post::id.bsonFieldName()),
             page = page,
             show = show
        )
@@ -822,7 +838,7 @@ AuditingRepository.kt
             count(buildQuery(criteria), criteria).awaitSuspending()
 
 
-    suspend fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("id", Sort.Direction.Ascending), page: Long, show: Int): PageData<Entity>{
+    suspend fun pageDataByCriteria(criteria: Map<String, Any>, sort: Sort = Sort.by("_id", Sort.Direction.Ascending), page: Long, show: Int): PageData<Entity>{
         val total = countByCriteria(criteria)
         val list = findByCriteria(criteria, sort)
             .page(page.toInt() - 1, show)
@@ -866,7 +882,7 @@ class PostRepository: AuditingRepository<Post>(){
         }
         return pageDataByCriteria(
             criteria = criteria,
-            sort = Sort.by("lastModifiedTime", Sort.Direction.Descending),
+            sort = Sort.by(AuditingEntity::lastModifiedTime.bsonFieldName(), Sort.Direction.Descending).and(Post::id.bsonFieldName()),
             page = page,
             show = show
         )

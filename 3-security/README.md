@@ -110,24 +110,7 @@ class UserRepository: AuditingRepository<User>() {
 * 一樣繼承 AuditingRepository
 
 我們看到 User.kt ，我們的 username 應該也要是唯一的，所以我們要加上 unique index
-* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/util/ReflectExtensions 新增 bsonFieldName 方法取得資料庫實際的 field 名稱
 * 在 UserRepository 使用 PostConstruct 創建 unique index
-
-ReflectExtensions.kt
-```kotlin
-package net.aotter.quarkus.tutorial.util
-
-import org.bson.codecs.pojo.annotations.BsonProperty
-import kotlin.reflect.KProperty1
-import kotlin.reflect.jvm.javaField
-
-fun <T, R> KProperty1<T, R>.bsonFieldName() = this.javaField
-    ?.getAnnotation(BsonProperty::class.java)
-    ?.let { it.value }
-    ?: this.name
-```
-
-* 取得 field 的 BsonProperty annotation ，拿到資料庫中真正的 field 名稱
 
 UserRepository.kt
 ```kotlin
