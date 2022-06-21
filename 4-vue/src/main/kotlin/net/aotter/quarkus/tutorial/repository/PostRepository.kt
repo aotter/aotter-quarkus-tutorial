@@ -51,16 +51,13 @@ class PostRepository: AuditingRepository<Post>(){
         return  findByCriteria(criteria).firstResult().awaitSuspending()
     }
 
-    suspend fun findPageDataByDeletedIsFalseAndAuthorNameAndAuthorIdAndCategory(
-        authorName: String?, authorId: ObjectId?, category: String?,
+    suspend fun findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
+        authorName: String?, category: String?,
         page: Long, show: Int): PageData<Post>{
         val criteria = HashMap<String, Any>().apply {
             put(Post::deleted.name, false)
             authorName?.let {
                 put(Post::authorName.name, it)
-            }
-            authorId?.let {
-                put(Post::authorId.name, it)
             }
             category?.let {
                 put(Post::category.name, it)

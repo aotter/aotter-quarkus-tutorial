@@ -31,13 +31,14 @@ class AppInitConfig{
     }
 
     private fun initPostData(){
+        val categoryList = arrayListOf("分類三","分類一","分類二")
         val posts = mutableListOf<Post>()
         for(index in 1..7){
             val post = Post(
                 authorId = ObjectId("6278b21b245917288cd7220b"),
                 authorName = "user",
                 title = """Title $index""",
-                category = "分類一",
+                category = categoryList[index % 3],
                 content = """Content $index""",
                 published = true,
                 deleted = false

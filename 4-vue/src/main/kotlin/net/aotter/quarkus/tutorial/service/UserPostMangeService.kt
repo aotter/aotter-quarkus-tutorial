@@ -1,7 +1,9 @@
 package net.aotter.quarkus.tutorial.service
 
+import io.smallrye.mutiny.coroutines.awaitSuspending
 import net.aotter.quarkus.tutorial.model.dto.PageData
 import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.exception.BusinessException
 import net.aotter.quarkus.tutorial.model.po.Post
 import net.aotter.quarkus.tutorial.model.vo.PostSummary
 import net.aotter.quarkus.tutorial.repository.PostRepository
@@ -22,21 +24,40 @@ class UserPostMangeService: PostManageService {
     override suspend fun getSelfPostSummary(
         username: String,
         category: String?,
-        authorIdValue: String?,
+        authorName: String?,
         page: Long,
         show: Int
     ): PageData<PostSummary> {
-        val authorId = kotlin.runCatching {
-            ObjectId(authorIdValue)
-        }.getOrNull()
-
-        return postRepository.findPageDataByDeletedIsFalseAndAuthorNameAndAuthorIdAndCategory(
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
             authorName = username,
-            authorId = authorId,
             category = category,
             page = page,
             show = show
         ).map { this.toPostSummary(it) }
+    }
+
+    override suspend fun publishSelfPost(username: String, idValue: String, status: Boolean) {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if(post.deleted || post.authorName != username){
+            throw BusinessException("無此文章")
+        }
+        post.published = status
+        postRepository.update(post).awaitSuspending()
+    }
+
+    override suspend fun deleteSelfPost(username: String, idValue: String) {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if(post.deleted || post.authorName != username){
+            throw BusinessException("無此文章")
+        }
+        post.deleted = true
+        postRepository.update(post).awaitSuspending()
     }
 
     private fun toPostSummary(post: Post): PostSummary = PostSummary(

@@ -448,7 +448,7 @@ layout.html
 
 ## 文章管理
 我們接下來要完成文章管理的功能，規劃是登入後可以到文章管理頁面，使用者會顯示自己的文章，管理原則是顯示所有的文章，  
-每篇文章都可以修改、上下架、刪除，還能夠創建新的文章，所以規劃會有以下三個頁面。
+每篇文章都可以修改、發布下架、刪除，還能夠創建新的文章，所以規劃會有以下三個頁面。
 
 * /console/#/ 顯示文章頁面
 * /console/#/posts/:id 修改文章
@@ -521,19 +521,690 @@ export default {
 * 拿掉原本預設的 HelloWorld.vue 並且刪除
 * 使用 $router 取得路由的 meta
 
+#### 文章 API
+再來我們來完成文章的 API，規劃如下
+* /api/posts GET ，查詢自己的文章分頁，有 authorId 、category 篩選
+* /api/posts/:id DELETE ，刪除自己的文章
+* /api/posts/:id/published PUT ，發布或下架自己的文章
+
+#### 查詢自己文章
+首先我們先完成查詢自己文章的 API
+* 創建 /src/main/kotlin/net/aotter/quarkus/tutorial/resource/api/PostManageApiResource.kt
+* 新增方法 listSelfPost 接受參數使用者名稱、分類、頁數、顯示幾筆
 
 
+```kotlin
+package net.aotter.quarkus.tutorial.resource.api
+
+import io.quarkus.security.Authenticated
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.vo.ApiResponse
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import javax.ws.rs.*
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.SecurityContext
+
+@Authenticated
+@Path("/api/post-manage")
+class PostManageApiResource {
+
+    @GET
+    suspend fun listSelfPost(
+        @Context securityContext: SecurityContext,
+        @QueryParam("authorName") authorName: String?,
+        @QueryParam("category") category: String?,
+        @QueryParam("page") @DefaultValue("1") page: Long,
+        @QueryParam("show") @DefaultValue("10") show: Int
+    ): ApiResponse<PageData<PostSummary>> {
+
+        return ApiResponse("成功")
+    }
+}
+```
+* 加上 @Authenticated 表示這個 API 需要登入
+* 回傳 PageData<PostSummary> 分頁後的文章摘要
+
+由於我們文章管理當不同角色會有不同的權限，我們使用 Interface 再依不同角色實作。
+* 修改 PostRepository 新增 findPageDataByDeletedIsFalseAndAuthorNameAndCategory 方法
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/service/PostManageService.kt
+* 新增方法 getSelfPostSummary 處理取得自己的文章摘要
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/service/AdminPostManageService.kt 繼承 PostManageService
+* 實作 getSelfPostSummary 方法
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/service/UserPostManageService.kt 繼承 PostManageService
+* 實作 getSelfPostSummary 方法
+* 修改 PostManageApiResource 注入 AdminPostManageService 和 UserPostManageService，新增方法 getPostManageServiceByRole 透過角色決定使用哪個實作
+* 修改 PostManageApiResource 的 listSelfPost 方法調用 PostServiceManage
+
+PostRepository.kt
+```kotlin
+...
+    suspend fun findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
+        authorName: String?, category: String?,
+        page: Long, show: Int): PageData<Post>{
+        val criteria = HashMap<String, Any>().apply {
+            put(Post::deleted.name, false)
+            authorName?.let {
+                put(Post::authorName.name, it)
+            }
+            category?.let {
+                put(Post::category.name, it)
+            }
+        }
+        return pageDataByCriteria(
+            criteria = criteria,
+            sort = Sort.by(AuditingEntity::createdTime.bsonFieldName(), Sort.Direction.Descending).and(Post::id.bsonFieldName()),
+            page = page,
+            show = show
+        )
+    }
+...
+```
+
+PostManageService.kt
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+
+interface PostManageService {
+    suspend fun getSelfPostSummary(
+        username: String,
+        category: String?, authorName: String?,
+        page: Long, show: Int): PageData<PostSummary>
+}
+```
+
+AdminPostManageService.kt
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.repository.PostRepository
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.inject.Named
+
+@Named("AdminPostManageService")
+@ApplicationScoped
+class AdminPostManageService: PostManageService {
+    @Inject
+    lateinit var postRepository: PostRepository
+
+    override suspend fun getSelfPostSummary(
+        username: String,
+        category: String?,
+        authorName: String?,
+        page: Long,
+        show: Int
+    ): PageData<PostSummary> {
+
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
+            authorName = authorName,
+            category = category,
+            page = page,
+            show = show
+        ).map { this.toPostSummary(it) }
+    }
+
+    private fun toPostSummary(post: Post): PostSummary = PostSummary(
+        id = post?.id.toString(),
+        title = post.title ,
+        category = post.category ,
+        authorName = post.authorName,
+        lastModifiedTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Taipei"))
+            .withLocale(Locale.TAIWAN)
+            .format(post.lastModifiedTime),
+        published = post.published
+    )
+}
+```
+* 由於有兩個實作需要使用 @Named("AdminPostManageService") 區分，之後注入也要使用 @Named("AdminPostManageService") 指定
+* 由於管理員可以查看所有人的文章，需要篩選時可以透過 authorName 參數
+
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.repository.PostRepository
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.inject.Named
+
+@Named("UserPostManageService")
+@ApplicationScoped
+class UserPostMangeService: PostManageService {
+    @Inject
+    lateinit var postRepository: PostRepository
+
+    override suspend fun getSelfPostSummary(
+        username: String,
+        category: String?,
+        authorName: String?,
+        page: Long,
+        show: Int
+    ): PageData<PostSummary> {
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
+            authorName = username,
+            category = category,
+            page = page,
+            show = show
+        ).map { this.toPostSummary(it) }
+    }
+
+    private fun toPostSummary(post: Post): PostSummary = PostSummary(
+        id = post?.id.toString(),
+        title = post.title ,
+        category = post.category ,
+        authorName = post.authorName,
+        lastModifiedTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Taipei"))
+            .withLocale(Locale.TAIWAN)
+            .format(post.lastModifiedTime),
+        published = post.published
+    )
+}
+```
+* 這裡一樣也要使用 @Named("UserPostManageService") 註記
+* 由於使用者只能查詢自己的文章，這裡查詢的 authorName 直接丟進 username
 
 
+```kotlin
+package net.aotter.quarkus.tutorial.resource.api
+
+import io.quarkus.security.Authenticated
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.vo.ApiResponse
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.security.Role
+import net.aotter.quarkus.tutorial.service.PostManageService
+import javax.inject.Inject
+import javax.inject.Named
+import javax.ws.rs.*
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.SecurityContext
+
+@Authenticated
+@Path("/api/post-manage")
+class PostManageApiResource {
+
+    @Inject
+    @field:Named("UserPostManageService")
+    lateinit var userPostManageService: PostManageService
+
+    @Inject
+    @field:Named("AdminPostManageService")
+    lateinit var adminPostManageService: PostManageService
+
+    @GET
+    suspend fun listSelfPost(
+        @Context securityContext: SecurityContext,
+        @QueryParam("authorName") authorName: String?,
+        @QueryParam("category") category: String?,
+        @QueryParam("page") @DefaultValue("1") page: Long,
+        @QueryParam("show") @DefaultValue("10") show: Int
+    ): ApiResponse<PageData<PostSummary>> {
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        val result = postManageService.getSelfPostSummary(username, category, authorName, page, show)
+        return ApiResponse("成功", result)
+    }
+
+    private fun getPostManageServiceByRole(securityContext: SecurityContext) =
+        if (securityContext.isUserInRole(Role.ADMIN_VALUE)) {
+            adminPostManageService
+        } else {
+            userPostManageService
+        }
+}
+```
+* 這裡注入兩個不同的實作，透過 @Named 區分哪個
+* 創建 getPostManageServiceByRole 方法透過角色取得實作
+* 在 listSelfPost 調用 PostManageService
 
 
+#### 接下來仿造剛剛的流程依序完成刪除自己的文章、發布或下架自己的文章
+* 修改 PostManageService 新增 publishSelfPost、deleteSelfPost 方法
+* 修改 AdminPostManageService 和 UserPostManageService 實作上面兩個方法
+* 修改 PostManageApiResource 新增 publishSelfPost 和 deleteSelfPost 兩個 API 調用 PostManageService
 
+PostManageService.kt
+```kotlin
+...
+    suspend fun publishSelfPost(username: String, idValue: String, status: Boolean)
 
+    suspend fun deleteSelfPost(username: String, idValue: String)
+...
+```
 
+AdminPostManageService.kt
+```kotlin
+...
+    override suspend fun publishSelfPost(username: String, idValue: String, status: Boolean) {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if(post.deleted){
+            throw BusinessException("無此文章")
+        }
+        post.published = status
+        postRepository.update(post).awaitSuspending()
+    }
 
+    override suspend fun deleteSelfPost(username: String, idValue: String) {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if(post.deleted){
+            throw BusinessException("無此文章")
+        }
+        post.deleted = true
+        postRepository.update(post).awaitSuspending()
+    }
+...
+```
 
+UserPostManageService.kt
+```kotlin
+...
+    override suspend fun publishSelfPost(username: String, idValue: String, status: Boolean) {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if(post.deleted || post.authorName != username){
+            throw BusinessException("無此文章")
+        }
+        post.published = status
+        postRepository.update(post).awaitSuspending()
+    }
 
+    override suspend fun deleteSelfPost(username: String, idValue: String) {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if(post.deleted || post.authorName != username){
+            throw BusinessException("無此文章")
+        }
+        post.deleted = true
+        postRepository.update(post).awaitSuspending()
+    }
+...
+```
+* 需要多判斷是不是操作自己的文章
 
+PostManageApiResource.kt
+```kotlin
+...
+    @PUT
+    @Path("/{id}/published")
+    suspend fun publishSelfPost(
+        @Context securityContext: SecurityContext,
+        @PathParam("id") id: String,
+        @Valid request: PublishPostRequest
+    ): ApiResponse<Unit>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        postManageService.publishSelfPost(username, id, request.status)
+        return ApiResponse("成功")
+    }
 
+    @DELETE
+    @Path("/{id}")
+    suspend fun deleteSelfPost(
+        @Context securityContext: SecurityContext,
+        @PathParam("id") id: String
+    ): ApiResponse<Unit>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        postManageService.deleteSelfPost(username, id)
+        return ApiResponse("成功")
+    }
+...
+```
 
+#### 再來我們要來完成前端畫面的呈現，但在開始之前我們先撰寫一些工具完成對 API 的調用
+* 創建 src/main/webapp/src/util/request.js 用來封裝 axios 完成一些全局的錯誤處理
+* 創建 src/main/webapp/src/api/post-manage.js 完成對 API 的調用
+
+request.js
+```
+import axios from 'axios'
+
+const service = axios.create({
+    baseURL: '/',
+    timeout: 5000
+})
+
+service.interceptors.response.use(
+    response => {
+        return response.data
+    },
+    error => {
+        if(error.response.data.title === 'Constraint Violation'){
+            Promise.reject(error)
+        }
+        alert(error.response.data.message)
+        if(error.response.status === 401){
+            window.location.href = '/login'
+        }
+    }
+)
+
+export default service
+```
+* 這裡封裝 axios 當錯誤時統一處理
+* error.response.data.title === 'Constraint Violation' 表示 hibernate-validator 錯誤個別處理
+* 401 錯誤表示未登入導引使用者到登入頁
+* 其他錯誤就跳 alert 通知使用者
+
+post-manage.js
+```
+import request from '@/util/request'
+
+export function fetchPostSummary(authorName, category, page, show){
+    var url = `/api/post-manage?page=${page}&show=${show}`
+    if(authorName !== null){
+        url += `&authorName=${authorName}`
+    }
+    if(category !== null){
+        url += `&category=${category}`
+    }
+    return request({
+        url: url,
+        method: 'get'
+    })
+}
+
+export function publishPost(id, status){
+    return request({
+        url: `/api/post-manage/${id}/published`,
+        method: 'put',
+        data: {
+            'status': status
+        }
+    })
+}
+
+export function deletePost(id){
+    return request({
+        url: `/api/post-manage/${id}`,
+        method: 'delete'
+    })
+}
+```
+
+#### 再來我們來完成我們的畫面
+* 使用 BootstrapVue 的 BTable, BButton, BPagination 完成畫面
+* 規劃 data 需要的資料
+
+HomeView.vue
+```
+<template>
+  <main role="main" class="container">
+    <h1 class="my-5 text-center">{{ $route.meta.title }}</h1>
+        <b-button 
+      class="mb-2" 
+      variant="warning"
+    >新增文章</b-button>
+
+    <b-table 
+      :items="items" 
+      :fields="fields" 
+      responsive="lg"
+    >
+          
+    </b-table>
+    <div>
+      <b-pagination
+        align="center"
+        prev-text="« 前一頁"
+        next-text="後一頁 »"
+        v-model="page"
+        :total-rows="total"
+        :per-page="show"
+        first-number
+        last-number
+      ></b-pagination>
+    </div>
+  </main>
+</template>
+
+<script>
+import { BTable, BButton, BPagination } from "bootstrap-vue";
+
+export default {
+  name: 'HomeView',
+  components: {
+    BTable,
+    BButton,
+    BPagination
+  },
+  data(){
+    return {
+      fields:[
+        {
+          key: "title",
+          label: "標題",
+        },
+        {
+          key: "category",
+          label: "分類",
+        },
+        {
+          key: "authorName",
+          label: "作者名稱",
+        },
+        {
+          key: "lastModifiedTime",
+          label: "更新時間",
+        },
+        {
+          key: "action",
+          label: "操作",
+        }
+      ],
+      items:[],
+      page: 1,
+      show: 6,
+      total: 0,
+      authorName: null,
+      category: null
+    }
+  }
+}
+</script>
+```
+* fields 就是表格的表頭
+* items 就是分頁後的資料
+* page，show，total 是分頁需要的資料
+* authorName 和 category 是篩選條件
+
+完成實際調用 API
+* 使用 watch 監控路由，完成篩選條件和分頁與網址參數的綁定
+* 新增 loadData 方法調用 API 取得資料
+* 新增 changePage 方法切換路由完成換頁
+* 新增 publishPost 方法調用 API 發布或下架文章
+* 新增 deletePost 方法調用 API 刪除文章
+* 使用 Scoped field slots 客製化 Table
+```
+<template>
+  <main role="main" class="container">
+    <h1 class="my-5 text-center">{{ $route.meta.title }}</h1>
+    <b-button 
+      class="mb-2" 
+      variant="warning"
+      :to="`/posts`"
+    >新增文章</b-button>
+
+    <b-table 
+      :items="items" 
+      :fields="fields" 
+      responsive="lg"
+    >
+      <template #cell(category)="data">
+        <b-link :to="`/?category=${data.item.category}&show=${show}`">{{data.item.category}}</b-link>
+      </template>
+
+      <template #cell(action)="data">
+        <b-button 
+          variant="primary" 
+          :to="`/posts/${data.item.id}`"
+        >編輯</b-button>
+
+        <b-button 
+          variant="info"
+          @click="publishPost(data.item.id, !data.item.published)"
+        >{{data.item.published ? "下架" : "發布"}}
+        </b-button>
+        
+        <b-button 
+          @click="deletePost(data.item.id)"
+          variant="danger"
+        >刪除</b-button>
+      </template>
+    </b-table>
+    <div>
+      <b-pagination
+        align="center"
+        prev-text="« 前一頁"
+        next-text="後一頁 »"
+        v-model="page"
+        :total-rows="total"
+        :per-page="show"
+        first-number
+        last-number
+        @change="changePage"
+      ></b-pagination>
+    </div>
+  </main>
+</template>
+
+<script>
+import { BTable, BButton, BPagination, BLink } from "bootstrap-vue";
+import { fetchPostSummary, publishPost, deletePost } from "@/api/post-manage";
+
+export default {
+  name: 'HomeView',
+  components: {
+    BTable,
+    BButton,
+    BPagination,
+    BLink
+  },
+  data(){
+    return {
+      fields:[
+        {
+          key: "title",
+          label: "標題",
+        },
+        {
+          key: "category",
+          label: "分類",
+        },
+        {
+          key: "authorName",
+          label: "作者名稱",
+        },
+        {
+          key: "lastModifiedTime",
+          label: "更新時間",
+        },
+        {
+          key: "action",
+          label: "操作",
+        }
+      ],
+      items:[],
+      page: 1,
+      show: 6,
+      total: 0,
+      authorName: null,
+      category: null
+    }
+  },
+  watch:{
+    '$route': {
+      handler: function(item){
+        const query = item.query
+   
+        if(query.authorName !== undefined){
+          this.authorName = query.authorName
+        }else{
+          this.authorName = null
+        }
+
+        if(query.category !== undefined){
+          this.category = query.category
+        }else{
+          this.category = null
+        }
+
+        if(query.page !== undefined){
+          this.page = query.page
+        }else{
+          this.page = 1
+        }
+
+        if(query.show !== undefined){
+          this.show = query.show
+        }else{
+          this.show = 6
+        }
+
+        this.loadData()
+      },
+      deep: true,
+      immediate: true
+    }
+  },
+  methods:{
+    loadData: function(){
+      fetchPostSummary(this.authorName, this.category, this.page, this.show).then(res => {
+        this.items = res.data.list;
+        this.total = res.data.total;
+      })
+    },
+    changePage: function(page){
+      const query = Object.assign({}, this.$route.query)
+      query.page = page
+      this.$router.push({query: query})
+    },
+    publishPost: function(id, status){
+      publishPost(id, status).then(res => {
+        alert(res.message)
+        this.loadData()
+      })
+    },
+    deletePost: function(id){
+      deletePost(id).then(res => {
+        alert(res.message)
+        this.loadData()
+      })
+    }
+  }
+}
+</script>
+```
+* BLink 和 BButton 的 to 會走 Vue Router 跟 html tag a 的 href 不一樣
+* 新增文章和編輯文章會轉到到編輯頁面之後實作
+* 發布或下架和刪除按鈕綁定 click 事件，使用對應的 method 調用 API 最後再使用 loadData 重新取得更新後的資料
+* watch 監控路由，當路由改變時會改變 data 那對應的資料再次觸發 loadData 重新取得資料
 
