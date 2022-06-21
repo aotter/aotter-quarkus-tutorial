@@ -666,6 +666,42 @@ login.html
 我們會在註冊頁面透過 AJAX 發送請求註冊帳號，伺服器端要驗證請求的參數並完成會員資料的儲存。
 為了完成參數的驗證我們額外引入 hibernate validator 幫助我們完成。
 
+#### 加入jackson module kotlin
+由於我們使用 kotlin 所以需要將 KotlinModule 加入 ObjectMapper，物件與 json 序列化與反序列化才會正常，
+在 quarkus 當中 如果 com.fasterxml.jackson.module:jackson-module-kotlin 倚賴和 quarkus-jackson extension 同時存在，
+quarkus 會自動註冊 KotlinModule 到 ObjectMapper，所以我們要加入 jackson-module-kotlin 到 pom.xml
+
+add pom.xml dependency
+```xml
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-kotlin</artifactId>
+    </dependency>
+```
+
+除了加入 KotlinModule 加入 ObjectMapper，另外我們還需要設定 FAIL_ON_NULL_FOR_PRIMITIVES，
+預設下 kotlin 的 PRIMITIVES 若是 null 會填上預設值，比如說 Boolean 會變成預設值 false，
+所以我們設定 FAIL_ON_NULL_FOR_PRIMITIVES，讓這種情況會丟出 exception
+* 創建 src/main/kotlin/net/aotter/quarkus/tutorial/config/MyObjectMapperCustomizer.kt
+
+MyObjectMapperCustomizer.kt
+```kotlin
+package net.aotter.quarkus.tutorial.config
+
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.quarkus.jackson.ObjectMapperCustomizer
+import javax.inject.Singleton
+
+@Singleton
+class MyObjectMapperCustomizer: ObjectMapperCustomizer {
+    override fun customize(objectMapper: ObjectMapper) {
+        objectMapper.enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+    }
+}
+```
+* 在 quarkus 當中可以透過實作 ObjectMapperCustomizer 設定 ObjectMapper
+
 #### 加入 quarkus hibernate validator extension
 可以透過以下兩種方式加入
 
@@ -787,11 +823,13 @@ data class SignupRequest(
         NotEmpty(message = "使用者名稱不得為空")
     ]
     var username: String,
+    
     @field:[
         NotEmpty(message = "密碼不得為空")
         Size(min = 8, max = 16, message = "密碼長度需為 8 到 16")
     ]
     var password: String,
+    
     @field:[
         NotEmpty(message = "確認密碼不得為空")
         Size(min = 8, max = 16, message = "密碼長度需為 8 到 16")
@@ -1067,6 +1105,18 @@ class GlobalExceptionMapper {
     lateinit var logger: Logger
 
     @ServerExceptionMapper
+    fun mismatchedInputException(e: MismatchedInputException): Response = Response.status(Response.Status.BAD_REQUEST)
+        .type(MediaType.APPLICATION_JSON)
+        .entity(ApiResponse<Unit>(message = "缺少請求參數"))
+        .build()
+
+    @ServerExceptionMapper
+    fun missingKotlinParameterException(e: MissingKotlinParameterException): Response = Response.status(Response.Status.BAD_REQUEST)
+        .type(MediaType.APPLICATION_JSON)
+        .entity(ApiResponse<Unit>(message = "缺少請求參數"))
+        .build()
+    
+    @ServerExceptionMapper
     fun businessException(e: BusinessException): Response = Response.status(Response.Status.BAD_REQUEST)
         .type(MediaType.APPLICATION_JSON)
         .entity(ApiResponse<Unit>(message = e.message ?: ""))
@@ -1091,6 +1141,7 @@ class GlobalExceptionMapper {
     }
 }
 ```
+* 處理 MismatchedInputException 和 MissingKotlinParameterException，這兩個 jackson 與 物件轉換發生的異常，包裹異常訊息返回
 * 業務邏輯錯誤返回 400 錯誤，統一使用 ApiResponse 包裹異常訊息返回
 * 資料錯誤返回 500 錯誤，並打印實際錯誤訊息讓工程師查看，但返回給前端的訊息是給使用者看的
 * 最後指定 Exception 將所有意想不到的錯誤都統一處理，一樣打印實際錯誤訊息並返回使用者提示
