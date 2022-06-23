@@ -2,8 +2,10 @@ package net.aotter.quarkus.tutorial.resource.api
 
 import io.quarkus.security.Authenticated
 import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.PostForm
 import net.aotter.quarkus.tutorial.model.dto.PublishPostRequest
 import net.aotter.quarkus.tutorial.model.vo.ApiResponse
+import net.aotter.quarkus.tutorial.model.vo.PostDetail
 import net.aotter.quarkus.tutorial.model.vo.PostSummary
 import net.aotter.quarkus.tutorial.security.Role
 import net.aotter.quarkus.tutorial.service.PostManageService
@@ -27,7 +29,7 @@ class PostManageApiResource {
     lateinit var adminPostManageService: PostManageService
 
     @GET
-    suspend fun listSelfPost(
+    suspend fun listSelfPostSummary(
         @Context securityContext: SecurityContext,
         @QueryParam("authorName") authorName: String?,
         @QueryParam("category") category: String?,
@@ -38,6 +40,43 @@ class PostManageApiResource {
         val username = securityContext.userPrincipal.name
         val result = postManageService.getSelfPostSummary(username, category, authorName, page, show)
         return ApiResponse("成功", result)
+    }
+
+    @GET
+    @Path("/{id}")
+    suspend fun getSelfPostDetail(
+        @Context securityContext: SecurityContext,
+        @PathParam("id") id: String
+    ): ApiResponse<PostDetail>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        val result = postManageService.getSelfPostDetail(username, id)
+        return ApiResponse("成功", result)
+    }
+
+    @POST
+    suspend fun createPost(
+        @Context securityContext: SecurityContext,
+        @Valid form: PostForm
+    ): ApiResponse<Unit>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        postManageService.createPost(username, form.category, form.title, form.content)
+        return ApiResponse("成功")
+    }
+
+
+    @PUT
+    @Path("/{id}")
+    suspend fun updateSelfPost(
+        @Context securityContext: SecurityContext,
+        @PathParam("id") id: String,
+        @Valid form: PostForm
+    ): ApiResponse<Unit>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        postManageService.updateSelfPost(username,  id , form.category, form.title, form.content)
+        return ApiResponse("成功")
     }
 
     @PUT

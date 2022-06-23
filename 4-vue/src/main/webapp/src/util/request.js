@@ -11,7 +11,7 @@ service.interceptors.response.use(
     },
     error => {
         if(error.response.data.title === 'Constraint Violation'){
-            Promise.reject(error)
+            return Promise.reject(error)
         }
         alert(error.response.data.message)
         if(error.response.status === 401){

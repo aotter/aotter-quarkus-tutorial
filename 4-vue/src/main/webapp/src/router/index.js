@@ -11,6 +11,22 @@ const routes = [
     meta:{
       title: '文章管理'
     }
+  },
+  {
+    path: '/posts/:id',
+    name: 'edit-post',
+    component: () => import('@/views/PostFormView.vue'),
+    meta:{
+      title: '編輯文章'
+    }
+  },
+  {
+    path: '/posts',
+    name: 'add-post',
+    component: () => import('@/views/PostFormView.vue'),
+    meta:{
+      title: '新增文章'
+    }
   }
 ]
 

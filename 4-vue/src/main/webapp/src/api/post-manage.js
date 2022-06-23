@@ -14,6 +14,38 @@ export function fetchPostSummary(authorName, category, page, show){
     })
 }
 
+export function fetchPostDetail(id){
+    return request({
+        url: `/api/post-manage/${id}`,
+        method: 'get'
+    })
+}
+
+export function createPost(category, title, content){
+    return request({
+        url: `/api/post-manage`,
+        method: 'post',
+        data: {
+            'category': category,
+            'title': title,
+            'content': content
+        }
+    })
+
+}
+
+export function updatePost(id, category, title, content){
+    return request({
+        url: `/api/post-manage/${id}`,
+        method: 'put',
+        data: {
+            'category': category,
+            'title': title,
+            'content': content
+        }
+    })
+}
+
 export function publishPost(id, status){
     return request({
         url: `/api/post-manage/${id}/published`,

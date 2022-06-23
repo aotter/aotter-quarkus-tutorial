@@ -18,17 +18,20 @@
 
       <template #cell(action)="data">
         <b-button 
+          class="mx-1"
           variant="primary" 
           :to="`/posts/${data.item.id}`"
         >編輯</b-button>
 
         <b-button 
+          class="mx-1"
           variant="info"
           @click="publishPost(data.item.id, !data.item.published)"
         >{{data.item.published ? "下架" : "發布"}}
         </b-button>
         
         <b-button 
+          class="mx-1"
           @click="deletePost(data.item.id)"
           variant="danger"
         >刪除</b-button>

@@ -523,14 +523,14 @@ export default {
 
 #### 文章 API
 再來我們來完成文章的 API，規劃如下
-* /api/posts GET ，查詢自己的文章分頁，有 authorId 、category 篩選
-* /api/posts/:id DELETE ，刪除自己的文章
-* /api/posts/:id/published PUT ，發布或下架自己的文章
+* /api/post-manage GET ，查詢自己的文章分頁，有 authorId 、category 篩選
+* /api/post-manage/:id DELETE ，刪除自己的文章
+* /api/post-manage/:id/published PUT ，發布或下架自己的文章
 
 #### 查詢自己文章
 首先我們先完成查詢自己文章的 API
 * 創建 /src/main/kotlin/net/aotter/quarkus/tutorial/resource/api/PostManageApiResource.kt
-* 新增方法 listSelfPost 接受參數使用者名稱、分類、頁數、顯示幾筆
+* 新增方法 listSelfPostSummary 接受參數使用者名稱、分類、頁數、顯示幾筆
 
 
 ```kotlin
@@ -549,7 +549,7 @@ import javax.ws.rs.core.SecurityContext
 class PostManageApiResource {
 
     @GET
-    suspend fun listSelfPost(
+    suspend fun listSelfPostSummary(
         @Context securityContext: SecurityContext,
         @QueryParam("authorName") authorName: String?,
         @QueryParam("category") category: String?,
@@ -573,7 +573,7 @@ class PostManageApiResource {
 * 創建 src/main/kotlin/net/aotter/quarkus/tutorial/service/UserPostManageService.kt 繼承 PostManageService
 * 實作 getSelfPostSummary 方法
 * 修改 PostManageApiResource 注入 AdminPostManageService 和 UserPostManageService，新增方法 getPostManageServiceByRole 透過角色決定使用哪個實作
-* 修改 PostManageApiResource 的 listSelfPost 方法調用 PostServiceManage
+* 修改 PostManageApiResource 的 listSelfPostSummary 方法調用 PostServiceManage
 
 PostRepository.kt
 ```kotlin
@@ -750,7 +750,7 @@ class PostManageApiResource {
     lateinit var adminPostManageService: PostManageService
 
     @GET
-    suspend fun listSelfPost(
+    suspend fun listSelfPostSummary(
         @Context securityContext: SecurityContext,
         @QueryParam("authorName") authorName: String?,
         @QueryParam("category") category: String?,
@@ -898,7 +898,7 @@ service.interceptors.response.use(
     },
     error => {
         if(error.response.data.title === 'Constraint Violation'){
-            Promise.reject(error)
+            return Promise.reject(error)
         }
         alert(error.response.data.message)
         if(error.response.status === 401){
@@ -1064,17 +1064,20 @@ export default {
 
       <template #cell(action)="data">
         <b-button 
+          class="mx-1"
           variant="primary" 
           :to="`/posts/${data.item.id}`"
         >編輯</b-button>
 
         <b-button 
+          class="mx-1"
           variant="info"
           @click="publishPost(data.item.id, !data.item.published)"
         >{{data.item.published ? "下架" : "發布"}}
         </b-button>
         
         <b-button 
+          class="mx-1"
           @click="deletePost(data.item.id)"
           variant="danger"
         >刪除</b-button>
@@ -1208,3 +1211,756 @@ export default {
 * 發布或下架和刪除按鈕綁定 click 事件，使用對應的 method 調用 API 最後再使用 loadData 重新取得更新後的資料
 * watch 監控路由，當路由改變時會改變 data 那對應的資料再次觸發 loadData 重新取得資料
 
+#### Refactor 
+我們看向 AdminPostManageService 和 UserPostManageService 會發現許多重複的程式碼，這隱約地散發出不好的味道，我們現在來好好的整理他。
+
+* 將 AdminPostManageService 的 publishSelfPost 和 deleteSelfPost 重複的程式碼獨立成一個方法
+* UserPostMangeService 也仿造上面處理
+* 創建 /src/main/kotlin/net/aotter/quarkus/tutorial/adapter/PostAdapter.kt 將 Post 轉換成 PostSummary 和 PostDetail 方法移到這裡
+* 需要轉換 Post 的在注入 PostAdapter 使用
+
+PostAdapter.kt
+```kotlin
+package net.aotter.quarkus.tutorial.adapter
+
+import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.model.vo.PostDetail
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
+import javax.enterprise.context.ApplicationScoped
+
+@ApplicationScoped
+class PostAdapter {
+    fun toPostSummary(post: Post): PostSummary = PostSummary(
+        id = post?.id.toString(),
+        title = post.title ,
+        category = post.category ,
+        authorName = post.authorName,
+        lastModifiedTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Taipei"))
+            .withLocale(Locale.TAIWAN)
+            .format(post.lastModifiedTime),
+        published = post.published
+    )
+
+    fun toPostDetail(post: Post): PostDetail = PostDetail(
+        category = post.category,
+        title =  post.title,
+        content = post.content,
+        authorId = post.authorId.toString(),
+        authorName = post.authorName,
+        lastModifiedTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Taipei"))
+            .withLocale(Locale.TAIWAN)
+            .format(post.lastModifiedTime)
+    )
+}
+```
+
+AdminPostManageService.kt
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import io.smallrye.mutiny.coroutines.awaitSuspending
+import net.aotter.quarkus.tutorial.adapter.PostAdapter
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.exception.BusinessException
+import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.repository.PostRepository
+import org.bson.types.ObjectId
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.inject.Named
+
+@Named("AdminPostManageService")
+@ApplicationScoped
+class AdminPostManageService: PostManageService {
+    @Inject
+    lateinit var postRepository: PostRepository
+
+    @Inject
+    lateinit var postAdapter: PostAdapter
+
+    override suspend fun getSelfPostSummary(
+        username: String,
+        category: String?,
+        authorName: String?,
+        page: Long,
+        show: Int
+    ): PageData<PostSummary> {
+
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
+            authorName = authorName,
+            category = category,
+            page = page,
+            show = show
+        ).map { postAdapter.toPostSummary(it) }
+    }
+
+    override suspend fun publishSelfPost(username: String, idValue: String, status: Boolean) {
+        val post = getSelfPost(idValue)
+        post.published = status
+        postRepository.update(post).awaitSuspending()
+    }
+
+    override suspend fun deleteSelfPost(username: String, idValue: String) {
+        val post = getSelfPost(idValue)
+        post.deleted = true
+        postRepository.update(post).awaitSuspending()
+    }
+
+    private suspend fun getSelfPost(idValue: String): Post {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if (post.deleted) {
+            throw BusinessException("無此文章")
+        }
+        return post
+    }
+}
+```
+
+UserPostMangeService.kt
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import io.smallrye.mutiny.coroutines.awaitSuspending
+import net.aotter.quarkus.tutorial.adapter.PostAdapter
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.exception.BusinessException
+import net.aotter.quarkus.tutorial.model.po.Post
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.repository.PostRepository
+import org.bson.types.ObjectId
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.inject.Named
+
+@Named("UserPostManageService")
+@ApplicationScoped
+class UserPostMangeService: PostManageService {
+    @Inject
+    lateinit var postRepository: PostRepository
+
+    @Inject
+    lateinit var postAdapter: PostAdapter
+
+    override suspend fun getSelfPostSummary(
+        username: String,
+        category: String?,
+        authorName: String?,
+        page: Long,
+        show: Int
+    ): PageData<PostSummary> {
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorNameAndCategory(
+            authorName = username,
+            category = category,
+            page = page,
+            show = show
+        ).map { postAdapter.toPostSummary(it) }
+    }
+
+    override suspend fun publishSelfPost(username: String, idValue: String, status: Boolean) {
+        val post = getSelfPost(idValue, username)
+        post.published = status
+        postRepository.update(post).awaitSuspending()
+    }
+
+    override suspend fun deleteSelfPost(username: String, idValue: String) {
+        val post = getSelfPost(idValue, username)
+        post.deleted = true
+        postRepository.update(post).awaitSuspending()
+    }
+
+    private suspend fun getSelfPost(idValue: String, username: String): Post {
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw BusinessException("無此文章")
+        val post = postRepository.findById(id).awaitSuspending() ?: throw BusinessException("無此文章")
+        if (post.deleted || post.authorName != username) {
+            throw BusinessException("無此文章")
+        }
+        return post
+    }
+}
+```
+
+PostService.kt
+```kotlin
+package net.aotter.quarkus.tutorial.service
+
+import net.aotter.quarkus.tutorial.adapter.PostAdapter
+import net.aotter.quarkus.tutorial.model.dto.PageData
+import net.aotter.quarkus.tutorial.model.dto.map
+import net.aotter.quarkus.tutorial.model.vo.PostDetail
+import net.aotter.quarkus.tutorial.model.vo.PostSummary
+import net.aotter.quarkus.tutorial.repository.PostRepository
+import org.bson.types.ObjectId
+import javax.enterprise.context.ApplicationScoped
+import javax.inject.Inject
+import javax.ws.rs.NotFoundException
+
+@ApplicationScoped
+class PostService {
+    @Inject
+    lateinit var postRepository: PostRepository
+
+    @Inject
+    lateinit var postAdapter: PostAdapter
+
+    suspend fun getExistedPostSummary(authorIdValue: String?, category: String?, published: Boolean?, page: Long, show: Int): PageData<PostSummary> {
+        val authorId = kotlin.runCatching {
+            ObjectId(authorIdValue)
+        }.getOrNull()
+
+        return postRepository.findPageDataByDeletedIsFalseAndAuthorIdAndCategoryAndPublished(authorId, category, published, page, show)
+            .map(postAdapter::toPostSummary)
+    }
+
+    suspend fun getExistedPostDetail(idValue: String, published: Boolean?): PostDetail{
+        val id = kotlin.runCatching {
+            ObjectId(idValue)
+        }.getOrNull() ?: throw NotFoundException("post detail not found")
+
+        return postRepository.findOneByDeletedIsFalseAndIdAndPublished(id, published)
+            ?.let(postAdapter::toPostDetail)
+            ?: throw NotFoundException("post detail not found")
+    }
+    
+}
+```
+
+#### 文章API
+再來我們繼續完成剩下的文章 API
+* /api/post-manage/:id GET，取得文章詳細資訊
+* /api/post-manage POST，創建文章
+* /api/post-manage/:id PUT，修改文章
+
+仿照上面流程完成API
+* 修改 PostManageService 新增方法 getSelfPostDetail 、 createPost 、 updateSelfPost
+* AdminPostManageService 和 UserPostMangeService 實作新增的方法
+* 創建 /src/main/kotlin/net/aotter/quarkus/tutorial/model/dto/PostForm.kt 用來承裝送來的請求
+* 修改 PostManageApiResource 新增 API 調用 PostManageService
+
+PostManageService.kt
+```kotlin
+...
+    suspend fun getSelfPostDetail(username: String, idValue: String): PostDetail
+
+    suspend fun createPost(username: String, category: String, title: String, content: String)
+
+    suspend fun updateSelfPost(username:String, idValue: String, category: String, title: String, content: String)
+...
+```
+
+AdminPostManageService.kt
+```kotlin
+...    
+    @Inject
+    lateinit var userRepository: UserRepository
+
+    override suspend fun getSelfPostDetail(username: String, idValue: String): PostDetail {
+        val post = getSelfPost(idValue)
+        return post.let { postAdapter.toPostDetail(it) }
+    }
+    
+    override suspend fun createPost(username: String, category: String, title: String, content: String) {
+        val user = userRepository.findOneByDeletedIsFalseAndUsername(username).awaitSuspending() ?: throw BusinessException("此帳號已不存在")
+        val post = Post(
+            authorId = user.id!!,
+            authorName = user.username,
+            title = title,
+            category = category,
+            content = content,
+            published = false,
+            deleted = false
+        )
+        postRepository.persist(post).awaitSuspending()
+    }
+    
+    override suspend fun updateSelfPost(
+        username: String,
+        idValue: String,
+        category: String,
+        title: String,
+        content: String
+    ) {
+        val post = getSelfPost(idValue)
+        post.category = category
+        post.title = title
+        post.content = content
+        postRepository.update(post).awaitSuspending()
+    }
+    
+...
+```
+
+UserPostMangeService.kt
+```kotlin
+...
+    @Inject
+    lateinit var userRepository: UserRepository
+    
+    override suspend fun getSelfPostDetail(username: String, idValue: String): PostDetail {
+        val post = getSelfPost(idValue, username)
+        return post.let { postAdapter.toPostDetail(it) }
+    }
+
+    override suspend fun createPost(username: String, category: String, title: String, content: String) {
+        val user = userRepository.findOneByDeletedIsFalseAndUsername(username).awaitSuspending() ?: throw BusinessException("此帳號已不存在")
+        val post = Post(
+            authorId = user.id!!,
+            authorName = user.username,
+            title = title,
+            category = category,
+            content = content,
+            published = false,
+            deleted = false
+        )
+        postRepository.persist(post).awaitSuspending()
+    }
+
+    override suspend fun updateSelfPost(
+        username: String,
+        idValue: String,
+        category: String,
+        title: String,
+        content: String
+    ) {
+        val post = getSelfPost(idValue, username)
+        post.category = category
+        post.title = title
+        post.content = content
+        postRepository.update(post).awaitSuspending()
+    }
+...
+```
+
+PostForm.kt
+```kotlin
+package net.aotter.quarkus.tutorial.model.dto
+
+import javax.validation.constraints.NotEmpty
+
+data class PostForm(
+    @field:NotEmpty(message = "標題不得為空")
+    var title: String,
+
+    @field:NotEmpty(message = "分類必須選擇")
+    var category: String,
+
+    @field:NotEmpty(message = "內容不得為空")
+    var content: String
+)
+
+```
+
+PostManageApiResource.kt
+```kotlin
+...
+    @GET
+    @Path("/{id}")
+    suspend fun getSelfPostDetail(
+        @Context securityContext: SecurityContext,
+        @PathParam("id") id: String
+    ): ApiResponse<PostDetail>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        val result = postManageService.getSelfPostDetail(username, id)
+        return ApiResponse("成功", result)
+    }
+
+    @POST
+    suspend fun createPost(
+        @Context securityContext: SecurityContext,
+        @Valid form: PostForm
+    ): ApiResponse<Unit>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        postManageService.createPost(username, form.category, form.title, form.content)
+        return ApiResponse("成功")
+    }
+
+
+    @PUT
+    @Path("/{id}")
+    suspend fun updateSelfPost(
+        @Context securityContext: SecurityContext,
+        @PathParam("id") id: String,
+        @Valid form: PostForm
+    ): ApiResponse<Unit>{
+        val postManageService = getPostManageServiceByRole(securityContext)
+        val username = securityContext.userPrincipal.name
+        postManageService.updateSelfPost(username,  id , form.category, form.title, form.content)
+        return ApiResponse("成功")
+    }
+...
+```
+
+#### 文章表單頁面
+再來我們完成新增文章和編輯文章的頁面
+
+* 創建 src/main/webapp/src/views/PostFormView.vue
+* 使用 BootstrapVue 完成表單的畫面
+* 修改 router/index.js 新增路由
+
+PostFormView.vue
+```
+<template>
+  <main role="main" class="container">
+    <h1 class="my-5 text-center">{{ $route.meta.title }}</h1>
+    <b-form>
+      <b-form-group label="分類" label-for="category">
+        <b-form-select
+          id="category"
+          v-model="form.category"
+          :options="category"
+          :state="validation.category.state"
+        ></b-form-select>
+        <b-form-invalid-feedback :state="validation.category.state">
+          {{validation.category.message}}
+        </b-form-invalid-feedback>
+      </b-form-group>
+
+      <b-form-group label="標題" label-for="title">
+        <b-form-input
+          id="title"
+          v-model="form.title"
+          type="text"
+          :state="validation.title.state"
+        ></b-form-input>
+        <b-form-invalid-feedback :state="validation.title.state">
+          {{validation.title.message}}
+        </b-form-invalid-feedback>
+      </b-form-group>
+
+      <b-form-group label="內容" label-for="content">
+        <b-form-textarea
+          id="content"
+          v-model="form.content"
+          rows="3"
+          :state="validation.content.state"
+        ></b-form-textarea>
+        <b-form-invalid-feedback :state="validation.content.state">
+          {{validation.content.message}}
+        </b-form-invalid-feedback>
+      </b-form-group>
+
+      <p class="text-center">
+        <b-button to="/" class="mx-1" type="button" variant="danger">取消</b-button>
+        <b-button class="mx-1" type="submit" variant="primary">送出</b-button>
+      </p>
+    </b-form>
+  </main>
+</template>
+<script>
+import {
+  BForm,
+  BFormGroup,
+  BFormInput,
+  BFormSelect,
+  BFormTextarea,
+  BButton,
+  BFormInvalidFeedback
+} from "bootstrap-vue";
+export default {
+  name: "PostFormView",
+  components: {
+    BForm,
+    BFormGroup,
+    BFormInput,
+    BFormSelect,
+    BFormTextarea,
+    BButton,
+    BFormInvalidFeedback
+  },
+  data() {
+    return {
+      form: {
+        title: "",
+        category: "分類一",
+        content: "",
+      },
+      validation:{
+        title:{
+          state: null,
+          message: ''
+        },
+        category:{
+          state: null,
+          message: ''
+        },
+        content:{
+          state: null,
+          message: ''
+        }
+      },
+      category: ["分類一", "分類二", "分類三"],
+    };
+  },
+};
+</script>
+```
+* 完成表單的畫面
+* validation 綁定資料驗證的錯誤訊息
+
+router/index.js
+```
+...
+  {
+    path: '/posts/:id',
+    name: 'edit-post',
+    component: () => import('@/views/PostFormView.vue'),
+    meta:{
+      title: '編輯文章'
+    }
+  },
+  {
+    path: '/posts',
+    name: 'add-post',
+    component: () => import('@/views/PostFormView.vue'),
+    meta:{
+      title: '新增文章'
+    }
+  }
+...
+```
+* 這裡的路由對應到 HomeView.vue 的連結，這樣就串起來了
+* :id 可以動態路由匹配
+
+#### 串接 API 完成功能
+接下來實際上串接 API 完成功能，由於我們頁面共用同個 View ，可以透過 this.$route.params.id 判別是新增還是編輯。
+
+* 修改 post-manage.js 新增方法串接 API
+* 修改 PostFormView.vue 新增 computed action 判斷現在是新增還是編輯
+* 新增 mounted 如果是編輯調用 API 取得當前文章詳細內容
+* 新增 methods 並綁定在表單送出事件，依新增或編輯調用 API 完成操作並回到文章管理頁面
+
+post-manage.js
+```
+...
+export function fetchPostDetail(id){
+    return request({
+        url: `/api/post-manage/${id}`,
+        method: 'get'
+    })
+}
+
+export function createPost(category, title, content){
+    return request({
+        url: `/api/post-manage`,
+        method: 'post',
+        data: {
+            'category': category,
+            'title': title,
+            'content': content
+        }
+    })
+
+}
+
+export function updatePost(id, category, title, content){
+    return request({
+        url: `/api/post-manage/${id}`,
+        method: 'put',
+        data: {
+            'category': category,
+            'title': title,
+            'content': content
+        }
+    })
+}
+...
+```
+
+PostFormView.vue
+```
+<template>
+  <main role="main" class="container">
+    <h1 class="my-5 text-center">{{ $route.meta.title }}</h1>
+    <b-form @submit="submit">
+      <b-form-group label="分類" label-for="category">
+        <b-form-select
+          id="category"
+          v-model="form.category"
+          :options="category"
+          :state="validation.category.state"
+        ></b-form-select>
+        <b-form-invalid-feedback :state="validation.category.state">
+          {{validation.category.message}}
+        </b-form-invalid-feedback>
+      </b-form-group>
+
+      <b-form-group label="標題" label-for="title">
+        <b-form-input
+          id="title"
+          v-model="form.title"
+          type="text"
+          :state="validation.title.state"
+        ></b-form-input>
+        <b-form-invalid-feedback :state="validation.title.state">
+          {{validation.title.message}}
+        </b-form-invalid-feedback>
+      </b-form-group>
+
+      <b-form-group label="內容" label-for="content">
+        <b-form-textarea
+          id="content"
+          v-model="form.content"
+          rows="3"
+          :state="validation.content.state"
+        ></b-form-textarea>
+        <b-form-invalid-feedback :state="validation.content.state">
+          {{validation.content.message}}
+        </b-form-invalid-feedback>
+      </b-form-group>
+
+      <p class="text-center">
+        <b-button to="/" class="mx-1" type="button" variant="danger">取消</b-button>
+        <b-button class="mx-1" type="submit" variant="primary">送出</b-button>
+      </p>
+    </b-form>
+  </main>
+</template>
+<script>
+import {
+  BForm,
+  BFormGroup,
+  BFormInput,
+  BFormSelect,
+  BFormTextarea,
+  BButton,
+  BFormInvalidFeedback
+} from 'bootstrap-vue';
+import {
+  fetchPostDetail,
+  createPost,
+  updatePost
+} from '@/api/post-manage'
+export default {
+  name: "PostFormView",
+  components: {
+    BForm,
+    BFormGroup,
+    BFormInput,
+    BFormSelect,
+    BFormTextarea,
+    BButton,
+    BFormInvalidFeedback
+  },
+  data() {
+    return {
+      form: {
+        title: "",
+        category: "分類一",
+        content: "",
+      },
+      validation:{
+        title:{
+          state: null,
+          message: ''
+        },
+        category:{
+          state: null,
+          message: ''
+        },
+        content:{
+          state: null,
+          message: ''
+        }
+      },
+      category: ["分類一", "分類二", "分類三"],
+    };
+  },
+  computed:{
+    action: function(){
+      if(this.$route.params.id == undefined){
+        return 'CREATE'
+      }else{
+        return 'UPDATE'
+      }
+    }
+  },
+  mounted(){
+    if(this.action == 'UPDATE'){
+      fetchPostDetail(this.$route.params.id).then(res =>{
+        this.form.category = res.data.category
+        this.form.title = res.data.title
+        this.form.content = res.data.content
+      })
+    }
+  },
+  methods:{
+    submit: function(){
+      if(this.action == 'CREATE'){
+        createPost(
+          this.form.category.trim(), 
+          this.form.title.trim(),
+          this.form.content.trim()
+        ).then(res => {
+          alert(res.message)
+          this.$router.push('/')
+        }).catch(error => {
+          const errors = error.response.data
+          const mapping ={
+            'createPost.form.title': 'title',
+            'createPost.form.category': 'category',
+            'createPost.form.content': 'content'
+          }
+          this.handleError(errors, mapping)
+        })
+      }else{
+        updatePost(
+          this.$route.params.id,
+          this.form.category.trim(),
+          this.form.title.trim(),
+          this.form.content.trim()
+        ).then(res => {
+          alert(res.message)
+          this.$router.push('/')
+        }).catch(error => {
+          const errors = error.response.data
+          const mapping ={
+            'updateSelfPost.form.title': 'title',
+            'updateSelfPost.form.category': 'category',
+            'updateSelfPost.form.content': 'content'
+          }
+          this.handleError(errors, mapping)
+        })
+      }
+    },
+    handleError: function(errors, mapping){
+      const validation = {
+        title:{
+          state: true,
+          message: ''
+        },
+        category:{
+          state: true,
+          message: ''
+        },
+        content:{
+          state: true,
+          message: ''
+        }
+      }
+      errors.violations.forEach(data =>{
+        const key = mapping[data.field]
+        validation[key].message = data.message
+        validation[key].state = false
+      })
+      this.validation = validation
+    }
+  }
+};
+</script>
+```
+
+這樣我們就完成了規劃的 BLOG 系統，學會怎麼只用 Quarkus 框架已經與前端框架 Vue 的整合。
