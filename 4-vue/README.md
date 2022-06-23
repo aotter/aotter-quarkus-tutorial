@@ -1210,6 +1210,7 @@ export default {
 * 新增文章和編輯文章會轉到到編輯頁面之後實作
 * 發布或下架和刪除按鈕綁定 click 事件，使用對應的 method 調用 API 最後再使用 loadData 重新取得更新後的資料
 * watch 監控路由，當路由改變時會改變 data 那對應的資料再次觸發 loadData 重新取得資料
+* BTable 可以透過 slot 客製化畫面的渲染，我們這邊客製化操作的按鈕和連結
 
 #### Refactor 
 我們看向 AdminPostManageService 和 UserPostManageService 會發現許多重複的程式碼，這隱約地散發出不好的味道，我們現在來好好的整理他。
@@ -1963,4 +1964,4 @@ export default {
 </script>
 ```
 
-這樣我們就完成了規劃的 BLOG 系統，學會怎麼只用 Quarkus 框架已經與前端框架 Vue 的整合。
+這樣我們就完成了規劃的 BLOG 系統，學會怎麼使用 Quarkus 框架已經與前端框架 Vue 的整合。
