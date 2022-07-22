@@ -1,4 +1,4 @@
-# aotter-quarkus-tutorial
+# A simple CMS tutorial using quarkus, kotlin, mongoDB, qute and vue.js
 
 ## 專案目的：
 
